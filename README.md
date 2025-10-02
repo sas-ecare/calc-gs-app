@@ -1,6 +1,6 @@
-# calculadora-ganhos-claro
+# calculadora-ganhos
 
-# 🧮 Calculadora de Ganhos - Claro
+# 🧮 Calculadora de Ganhos
 
 Simulador interno para estimativa de transações evitadas por canal digital, baseado em CR e % retido.
 
