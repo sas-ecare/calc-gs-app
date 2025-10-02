@@ -4,11 +4,13 @@ from datetime import datetime
 import numpy as np
 import base64
 from pathlib import Path
+import plotly.express as px
+import plotly.graph_objects as go
 
 # ====================== CONFIG INICIAL ======================
 st.set_page_config(
     page_title="🖩 Calculadora de Ganhos",
-    page_icon="📶",  # Ícone do navegador
+    page_icon="📶",
     layout="wide"
 )
 
@@ -66,7 +68,7 @@ if logo_bytes:
     st.markdown(
         f"""
         <h1 style='text-align: center; color: #8B0000; font-size: 70px;'>
-            Calculadora de Ganhos <img src='data:image/png;base64,{img_b64}' style='height:100px; vertical-align:middle; margin-right:10px'>
+            Calculadora de Ganhos <img src='data:image/png;base64,{img_b64}' style='height:100px; vertical-align:middle; margin-left:10px'>
         </h1>
         """,
         unsafe_allow_html=True
@@ -201,7 +203,7 @@ if st.button("🚀 Calcular Transações Evitadas"):
     csv = df_lote.to_csv(index=False).encode('utf-8')
     st.download_button("📥 Baixar Simulação Completa (CSV)", csv, "simulacao_transacoes.csv", "text/csv")
 
-    import plotly.express as px
+    # 📊 Gráfico de Barras
     fig = px.bar(df_lote.sort_values("Transações Evitadas", ascending=False),
                  x="Subcanal", y="Transações Evitadas",
                  title="📊 Transações Evitadas por Subcanal",
@@ -209,7 +211,40 @@ if st.button("🚀 Calcular Transações Evitadas"):
                  text_auto=True)
     st.plotly_chart(fig, use_container_width=True)
 
+    # 📉 Gráfico de Pareto
+    st.markdown("### 🔎 Análise de Pareto - Potencial de Ganho")
+    df_pareto = df_lote.sort_values("Transações Evitadas", ascending=False).reset_index(drop=True)
+    df_pareto["Acumulado"] = df_pareto["Transações Evitadas"].cumsum()
+    df_pareto["Acumulado %"] = 100 * df_pareto["Acumulado"] / df_pareto["Transações Evitadas"].sum()
 
+    fig_pareto = go.Figure()
 
+    # Barras
+    fig_pareto.add_trace(go.Bar(
+        x=df_pareto["Subcanal"],
+        y=df_pareto["Transações Evitadas"],
+        name="Transações Evitadas",
+        marker_color="crimson"
+    ))
 
+    # Linha acumulada
+    fig_pareto.add_trace(go.Scatter(
+        x=df_pareto["Subcanal"],
+        y=df_pareto["Acumulado %"],
+        name="Acumulado %",
+        mode="lines+markers",
+        marker=dict(color="royalblue"),
+        yaxis="y2"
+    ))
 
+    # Layout duplo eixo
+    fig_pareto.update_layout(
+        title="Pareto das Transações Evitadas",
+        xaxis=dict(title="Subcanais"),
+        yaxis=dict(title="Transações Evitadas"),
+        yaxis2=dict(title="Acumulado %", overlaying="y", side="right", range=[0, 100]),
+        legend=dict(x=0.75, y=1.15, orientation="h"),
+        bargap=0.2
+    )
+
+    st.plotly_chart(fig_pareto, use_container_width=True)
