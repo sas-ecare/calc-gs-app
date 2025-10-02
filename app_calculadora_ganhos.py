@@ -5,7 +5,7 @@ import numpy as np
 import base64
 from pathlib import Path
 import plotly.express as px
-import plotly.graph_objects as go
+import io
 
 # ====================== CONFIG INICIAL ======================
 st.set_page_config(
@@ -27,7 +27,8 @@ def check_password():
         st.session_state["authenticated"] = False
 
     if not st.session_state["authenticated"]:
-        st.text_input("🔐 Insira a senha para acessar:", type="password", on_change=password_entered, key="password")
+        st.text_input("🔐 Insira a senha para acessar:", type="password",
+                      on_change=password_entered, key="password")
         st.stop()
 
 check_password()
@@ -61,23 +62,28 @@ def _find_asset_bytes(name_candidates):
 def load_logo_for_title():
     return _find_asset_bytes(["claro_logo", "logo_claro", "claro"])
 
-# ====================== CARREGAR LOGO NO TÍTULO ====================== 
+# ====================== CARREGAR LOGO NO TÍTULO ======================
 logo_bytes = load_logo_for_title()
 if logo_bytes:
     img_b64 = base64.b64encode(logo_bytes).decode()
     st.markdown(
         f"""
-        <h1 style='text-align: center; color: #8B0000; font-size: 70px;'>
-            Calculadora de Ganhos <img src='data:image/png;base64,{img_b64}' style='height:100px; vertical-align:middle; margin-left:10px'>
+        <h1 style='text-align: center; color: #8B0000; font-size: 60px;'>
+            <img src='data:image/png;base64,{img_b64}' style='height:80px; vertical-align:middle; margin-right:10px'>
+            Calculadora de Ganhos - Volume de CR Evitado
         </h1>
         """,
         unsafe_allow_html=True
     )
 else:
     st.markdown(
-        "<h1 style='text-align: center; color: #8B0000; font-size: 60px;'>🖩 Calculadora de Ganhos</h1>",
+        "<h1 style='text-align: center; color: #8B0000;'>🖩 Calculadora de Ganhos - Volume de CR Evitado</h1>",
         unsafe_allow_html=True
     )
+
+# ====================== DESCRIÇÃO ======================
+st.info("📊 Esta calculadora estima **quanto do Contact Rate (CR)** pode ser evitado "
+        "com base em ações de incentivo ao autoatendimento e melhorias aplicadas nos canais digitais.")
 
 # ========== FUNÇÃO DE CARGA ==========
 @st.cache_data
@@ -98,7 +104,7 @@ retido_dict = {
     'Web': 0.902710768
 }
 
-# ========== FILTROS ========== #
+# ========== FILTROS ==========
 st.markdown("### 🔎 Filtros de Cenário")
 col1, col2 = st.columns(2)
 
@@ -136,10 +142,10 @@ retido_pct = retido_dict.get(tribo, 1.0)
 st.markdown("---")
 st.markdown("### ➗ Parâmetros para Simulação")
 col1, _ = st.columns([2, 1])
-volume_esperado = col1.number_input("📥 Volume de Transações Esperado", min_value=0, value=10000)
+volume_esperado = col1.number_input("📥 Volume de Acessos com Potencial de Redução de CR", min_value=0, value=10000)
 
 # ========== CÁLCULO ==========
-if st.button("🚀 Calcular Transações Evitadas"):
+if st.button("🚀 Calcular Volume de CR Evitado"):
     df_final = df_subcanal[df_subcanal['SEGMENTO'] == segmento]
 
     if df_final.empty:
@@ -155,18 +161,18 @@ if st.button("🚀 Calcular Transações Evitadas"):
     tx_trans_acessos = vol_transacoes / vol_acessos if vol_acessos > 0 else 1.75
     tx_trans_acessos = tx_trans_acessos if tx_trans_acessos > 0 else 1.75
 
-    transacoes_esperadas = (volume_esperado / tx_trans_acessos) * cr_segmento * retido_pct
+    volume_cr_evitado = (volume_esperado / tx_trans_acessos) * cr_segmento * retido_pct
 
     st.markdown("---")
-    st.markdown("### 📊 Resultados da Simulação")
+    st.markdown("### 📊 Resultados - Volume de CR Evitado")
     col1, col2, col3 = st.columns(3)
     col1.metric("Transações / Acessos", f"{tx_trans_acessos:.2f}")
     col2.metric("CR Segmento (%)", f"{cr_segmento*100:.2f}")
     col3.metric(f"% Retido ({tribo})", f"{retido_pct*100:.2f}")
 
-    valor_formatado = f"{transacoes_esperadas:,.0f}".replace(",", ".")
-    st.success(f"✅ Transações Evitadas: **{valor_formatado}**")
-    st.caption("Fórmula: Volume Esperado ÷ (Transações / Acessos) × CR Segmento × % Retido")
+    valor_formatado = f"{volume_cr_evitado:,.0f}".replace(",", ".")
+    st.success(f"✅ Volume de CR Evitado: **{valor_formatado}**")
+    st.caption("Fórmula: Acessos Esperados ÷ (Transações / Acessos) × CR × % Retido")
 
     # DASHBOARD POR SUBCANAIS
     st.markdown("---")
@@ -194,61 +200,47 @@ if st.button("🚀 Calcular Transações Evitadas"):
             "Transações / Acessos": round(tx, 2),
             "% Retido": round(ret_lote*100, 2),
             "% CR": round(cr*100, 2),
-            "Transações Evitadas": round(estimado)
+            "Volume de CR Evitado": round(estimado)
         })
 
     df_lote = pd.DataFrame(resultados_lote)
     st.dataframe(df_lote, use_container_width=True)
 
+    # DOWNLOAD CSV
     csv = df_lote.to_csv(index=False).encode('utf-8')
-    st.download_button("📥 Baixar Simulação Completa (CSV)", csv, "simulacao_transacoes.csv", "text/csv")
+    st.download_button("📥 Baixar Simulação Completa (CSV)", csv, "simulacao_cr.csv", "text/csv")
 
-    # 📊 Gráfico de Barras
-    fig = px.bar(df_lote.sort_values("Transações Evitadas", ascending=False),
-                 x="Subcanal", y="Transações Evitadas",
-                 title="📊 Transações Evitadas por Subcanal",
-                 color="Tribo",
-                 text_auto=True)
-    st.plotly_chart(fig, use_container_width=True)
-
-    # 📉 Gráfico de Pareto
-    st.markdown("### 🔎 Análise de Pareto - Potencial de Ganho")
-    df_pareto = df_lote.sort_values("Transações Evitadas", ascending=False).reset_index(drop=True)
-    df_pareto["Acumulado"] = df_pareto["Transações Evitadas"].cumsum()
-    df_pareto["Acumulado %"] = 100 * df_pareto["Acumulado"] / df_pareto["Transações Evitadas"].sum()
-
-    # Destacar 80%
-    df_pareto["Cor"] = np.where(df_pareto["Acumulado %"] <= 80, "crimson", "lightgray")
-
-    fig_pareto = go.Figure()
-
-    # Barras
-    fig_pareto.add_trace(go.Bar(
-        x=df_pareto["Subcanal"],
-        y=df_pareto["Transações Evitadas"],
-        name="Transações Evitadas",
-        marker_color=df_pareto["Cor"]
-    ))
-
-    # Linha acumulada
-    fig_pareto.add_trace(go.Scatter(
-        x=df_pareto["Subcanal"],
-        y=df_pareto["Acumulado %"],
-        name="Acumulado %",
-        mode="lines+markers",
-        marker=dict(color="royalblue"),
-        yaxis="y2"
-    ))
-
-    fig_pareto.update_layout(
-        title="Pareto das Transações Evitadas",
-        xaxis=dict(title="SUBCANAIS"),
-        yaxis=dict(title="TRANSAÇOES"),
-        yaxis2=dict(title="ACUMULADO %", overlaying="y", side="right", range=[0, 100]),
-        legend=dict(x=0.75, y=1.15, orientation="h"),
-        bargap=0.2
+    # DOWNLOAD EXCEL (com openpyxl para evitar erro)
+    buffer = io.BytesIO()
+    with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+        df_lote.to_excel(writer, index=False, sheet_name="Simulacao_CR")
+    st.download_button(
+        label="📊 Baixar em Excel",
+        data=buffer.getvalue(),
+        file_name="simulacao_cr.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
+    # GRÁFICO DE BARRAS
+    fig = px.bar(df_lote.sort_values("Volume de CR Evitado", ascending=False),
+                 x="Subcanal", y="Volume de CR Evitado",
+                 title="📊 Volume de CR Evitado por Subcanal",
+                 color="Tribo", text_auto=True)
+    st.plotly_chart(fig, use_container_width=True)
+
+    # GRÁFICO PARETO
+    df_lote_sorted = df_lote.sort_values("Volume de CR Evitado", ascending=False).reset_index(drop=True)
+    df_lote_sorted["% Acumulado"] = df_lote_sorted["Volume de CR Evitado"].cumsum() / df_lote_sorted["Volume de CR Evitado"].sum() * 100
+
+    fig_pareto = px.bar(df_lote_sorted, x="Subcanal", y="Volume de CR Evitado",
+                        title="📈 Pareto - Volume de CR Evitado",
+                        text_auto=True)
+    fig_pareto.add_scatter(x=df_lote_sorted["Subcanal"], y=df_lote_sorted["% Acumulado"],
+                           mode="lines+markers", name="% Acumulado", yaxis="y2")
+
+    fig_pareto.update_layout(
+        yaxis2=dict(overlaying="y", side="right", range=[0, 110], title="% Acumulado"),
+        xaxis=dict(title="Subcanal"),
+        yaxis=dict(title="Volume de CR Evitado")
+    )
     st.plotly_chart(fig_pareto, use_container_width=True)
-
-
