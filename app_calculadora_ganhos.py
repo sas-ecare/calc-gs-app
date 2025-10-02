@@ -30,7 +30,7 @@ def check_password():
 
 check_password()
 
-# ====================== FUNÇÕES DE IMAGEM (LOGO) ======================
+# ====================== FUNÇÕES DE IMAGEM (LOGO/BANNER) ======================
 def _find_asset_bytes(name_candidates):
     exts = [".png", ".PNG", ".jpg", ".JPG", ".jpeg", ".JPEG", ".webp", ".WEBP"]
     try:
@@ -59,17 +59,32 @@ def _find_asset_bytes(name_candidates):
 def load_claro_logo():
     return _find_asset_bytes(["claro_logo", "logo_claro", "claro"])
 
-# ====================== CARREGAR LOGO ======================
+def load_claro_banner():
+    return _find_asset_bytes(["claro_banner", "banner_claro", "claro_banner_horizontal"])
+
+# ====================== CARREGAR LOGO NO CANTO ======================
 logo_bytes = load_claro_logo()
 if logo_bytes:
     img_b64 = base64.b64encode(logo_bytes).decode()
     st.markdown(
-        f"<div style='text-align:right'><img src='data:image/png;base64,{img_b64}' height='150'></div>",
+        f"<div style='text-align:right'><img src='data:image/png;base64,{img_b64}' height='120'></div>",
         unsafe_allow_html=True
     )
 
-# ====================== TÍTULO ======================
-st.markdown("<h1 style='text-align: center; color: #8B0000;'>🖩 Calculadora de Ganhos - Transações Evitadas</h1>", unsafe_allow_html=True)
+# ====================== CARREGAR BANNER CENTRAL ======================
+banner_bytes = load_claro_banner()
+if banner_bytes:
+    banner_b64 = base64.b64encode(banner_bytes).decode()
+    st.markdown(
+        f"<div style='text-align:center'><img src='data:image/png;base64,{banner_b64}' width='100%'></div>",
+        unsafe_allow_html=True
+    )
+
+# ====================== TÍTULO MAIOR ======================
+st.markdown(
+    "<h1 style='text-align: center; color: #8B0000; font-size: 46px;'>🖩 Calculadora de Ganhos - Transações Evitadas</h1>",
+    unsafe_allow_html=True
+)
 
 # ========== FUNÇÃO DE CARGA ==========
 @st.cache_data
@@ -202,6 +217,3 @@ if st.button("🚀 Calcular Transações Evitadas"):
                  color="Tribo",
                  text_auto=True)
     st.plotly_chart(fig, use_container_width=True)
-
-
-
