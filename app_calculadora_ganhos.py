@@ -13,7 +13,7 @@ st.set_page_config(page_title="Calculadora de Ganhos", layout="wide")
 # ====================== AUTENTICAÇÃO COM SENHA ======================
 def check_password():
     def password_entered():
-        if st.session_state["password"] == "claro2024!":  # 👈 Defina a senha aqui
+        if st.session_state["password"] == "claro2024!":
             st.session_state["authenticated"] = True
         else:
             st.session_state["authenticated"] = False
@@ -23,11 +23,10 @@ def check_password():
         st.session_state["authenticated"] = False
 
     if not st.session_state["authenticated"]:
-        st.text_input("🔒 Insira a senha para acessar:", type="password", on_change=password_entered, key="password")
+        st.text_input("🔐 Insira a senha para acessar:", type="password", on_change=password_entered, key="password")
         st.stop()
 
 check_password()
-
 
 # ====================== FUNÇÕES DE IMAGEM (LOGO) ======================
 def _find_asset_bytes(name_candidates):
@@ -71,24 +70,20 @@ if logo_bytes:
 else:
     st.info("⚠️ Logo da Claro não foi encontrado nos caminhos esperados.")
 
-st.markdown("<h1 style='text-align: center; color: #8B0000;'>📊 Calculadora de Ganhos - Transações Evitadas</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: #8B0000;'>📈 Calculadora de Ganhos - Transações Evitadas</h1>", unsafe_allow_html=True)
 
 # ========== FUNÇÃO DE CARGA ==========
 @st.cache_data
-def carregar_dados(uploaded_file):
-    df = pd.read_excel(uploaded_file, sheet_name="Tabela Performance")
+def carregar_dados():
+    url_base = "https://raw.githubusercontent.com/gustavo3-freitas/base_calculadora/main/Tabela_Performance.xlsx"
+    df = pd.read_excel(url_base, sheet_name="Tabela Performance")
     df['ANOMES'] = pd.to_datetime(df['ANOMES'].astype(str), format='%Y%m', errors='coerce')
     df['VOL_KPI'] = pd.to_numeric(df['VOL_KPI'], errors='coerce')
     df['CR_DIR'] = pd.to_numeric(df['CR_DIR'], errors='coerce')
     return df
 
-# ========== UPLOAD ==========
-uploaded_file = st.file_uploader("📂 Envie a base (.xlsx) com aba 'Tabela Performance'", type=["xlsx"])
-if not uploaded_file:
-    st.info("Envie o arquivo para começar.")
-    st.stop()
-
-df = carregar_dados(uploaded_file)
+# ========== CARGA DIRETA ==========
+df = carregar_dados()
 
 # ========== TAXAS FIXAS ==========
 retido_dict = {
@@ -98,7 +93,7 @@ retido_dict = {
 }
 
 # ========== FILTROS ==========
-st.markdown("### 🎯 Filtros de Cenário")
+st.markdown("### 🌟 Filtros de Cenário")
 col1, col2 = st.columns(2)
 
 mes_atual_str = pd.to_datetime(datetime.today()).strftime('%Y-%m')
@@ -156,7 +151,6 @@ if st.button("🚀 Calcular Transações Evitadas"):
 
     transacoes_esperadas = (volume_esperado / tx_trans_acessos) * cr_segmento * retido_pct
 
-    # RESULTADOS
     st.markdown("---")
     st.markdown("### 📈 Resultados da Simulação")
     col1, col2, col3 = st.columns(3)
@@ -164,14 +158,13 @@ if st.button("🚀 Calcular Transações Evitadas"):
     col2.metric("CR Segmento (%)", f"{cr_segmento*100:.2f}")
     col3.metric(f"% Retido ({tribo})", f"{retido_pct*100:.2f}")
 
-    #st.success(f"✅ Transações Evitadas: **{transacoes_esperadas:.0f}**")
     valor_formatado = f"{transacoes_esperadas:,.0f}".replace(",", ".")
     st.success(f"✅ Transações Evitadas: **{valor_formatado}**")
     st.caption("Fórmula: Volume Esperado ÷ (Transações / Acessos) × CR Segmento × % Retido")
 
-    # DASHBOARD POR SUBCANAIS (LOTE)
+    # DASHBOARD POR SUBCANAIS
     st.markdown("---")
-    st.markdown("### 📤 Simulação para Todos os Subcanais")
+    st.markdown("### 📄 Simulação para Todos os Subcanais")
     resultados_lote = []
 
     for sub in subcanais_disponiveis:
@@ -201,11 +194,9 @@ if st.button("🚀 Calcular Transações Evitadas"):
     df_lote = pd.DataFrame(resultados_lote)
     st.dataframe(df_lote, use_container_width=True)
 
-    # DOWNLOAD
     csv = df_lote.to_csv(index=False).encode('utf-8')
     st.download_button("⬇️ Baixar Simulação Completa (CSV)", csv, "simulacao_transacoes.csv", "text/csv")
 
-    # GRÁFICO
     import plotly.express as px
     fig = px.bar(df_lote.sort_values("Transações Evitadas", ascending=False),
                  x="Subcanal", y="Transações Evitadas",
@@ -213,4 +204,3 @@ if st.button("🚀 Calcular Transações Evitadas"):
                  color="Tribo",
                  text_auto=True)
     st.plotly_chart(fig, use_container_width=True)
-
