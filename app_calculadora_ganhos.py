@@ -1,14 +1,16 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-from PIL import Image
 import numpy as np
-import os, base64
+import base64
 from pathlib import Path
-import io
 
 # ====================== CONFIG INICIAL ======================
-st.set_page_config(page_title="Calculadora de Ganhos", layout="wide")
+st.set_page_config(
+    page_title="🖩 Calculadora de Ganhos",
+    page_icon="📶",  # Troque para "🖩" se quiser ícone de calculadora no navegador
+    layout="wide"
+)
 
 # ====================== AUTENTICAÇÃO COM SENHA ======================
 def check_password():
@@ -43,34 +45,31 @@ def _find_asset_bytes(name_candidates):
         Path.cwd().resolve() / "assets",
         Path.cwd().resolve() / "static",
     ]
-    tried = []
     for d in search_dirs:
         for base in name_candidates:
             for ext in exts:
                 p = d / f"{base}{ext}"
-                tried.append(str(p))
                 if p.exists():
                     try:
-                        return p.read_bytes(), tried
+                        return p.read_bytes()
                     except Exception:
                         pass
-    return None, tried
+    return None
 
 def load_claro_logo():
     return _find_asset_bytes(["claro_logo", "logo_claro", "claro"])
 
 # ====================== CARREGAR LOGO ======================
-logo_bytes, tried_paths = load_claro_logo()
+logo_bytes = load_claro_logo()
 if logo_bytes:
     img_b64 = base64.b64encode(logo_bytes).decode()
     st.markdown(
         f"<div style='text-align:right'><img src='data:image/png;base64,{img_b64}' height='50'></div>",
         unsafe_allow_html=True
     )
-else:
-    st.info("⚠️ Logo da Claro não foi encontrado nos caminhos esperados.")
 
-st.markdown("<h1 style='text-align: center; color: #8B0000;'>📈 Calculadora de Ganhos - Transações Evitadas</h1>", unsafe_allow_html=True)
+# ====================== TÍTULO ======================
+st.markdown("<h1 style='text-align: center; color: #8B0000;'>🖩 Calculadora de Ganhos - Transações Evitadas</h1>", unsafe_allow_html=True)
 
 # ========== FUNÇÃO DE CARGA ==========
 @st.cache_data
@@ -82,7 +81,6 @@ def carregar_dados():
     df['CR_DIR'] = pd.to_numeric(df['CR_DIR'], errors='coerce')
     return df
 
-# ========== CARGA DIRETA ==========
 df = carregar_dados()
 
 # ========== TAXAS FIXAS ==========
@@ -92,8 +90,8 @@ retido_dict = {
     'Web': 0.902710768
 }
 
-# ========== FILTROS ==========
-st.markdown("### 🌟 Filtros de Cenário")
+# ========== FILTROS ========== #
+st.markdown("### 🔎 Filtros de Cenário")
 col1, col2 = st.columns(2)
 
 mes_atual_str = pd.to_datetime(datetime.today()).strftime('%Y-%m')
@@ -128,7 +126,7 @@ retido_pct = retido_dict.get(tribo, 1.0)
 
 # ========== PARÂMETROS DE SIMULAÇÃO ==========
 st.markdown("---")
-st.markdown("### 🔢 Parâmetros para Simulação")
+st.markdown("### ➗ Parâmetros para Simulação")
 col1, _ = st.columns([2, 1])
 volume_esperado = col1.number_input("📥 Volume de Transações Esperado", min_value=0, value=10000)
 
@@ -152,7 +150,7 @@ if st.button("🚀 Calcular Transações Evitadas"):
     transacoes_esperadas = (volume_esperado / tx_trans_acessos) * cr_segmento * retido_pct
 
     st.markdown("---")
-    st.markdown("### 📈 Resultados da Simulação")
+    st.markdown("### 📊 Resultados da Simulação")
     col1, col2, col3 = st.columns(3)
     col1.metric("Transações / Acessos", f"{tx_trans_acessos:.2f}")
     col2.metric("CR Segmento (%)", f"{cr_segmento*100:.2f}")
@@ -195,12 +193,12 @@ if st.button("🚀 Calcular Transações Evitadas"):
     st.dataframe(df_lote, use_container_width=True)
 
     csv = df_lote.to_csv(index=False).encode('utf-8')
-    st.download_button("⬇️ Baixar Simulação Completa (CSV)", csv, "simulacao_transacoes.csv", "text/csv")
+    st.download_button("📥 Baixar Simulação Completa (CSV)", csv, "simulacao_transacoes.csv", "text/csv")
 
     import plotly.express as px
     fig = px.bar(df_lote.sort_values("Transações Evitadas", ascending=False),
                  x="Subcanal", y="Transações Evitadas",
-                 title="Transações Evitadas por Subcanal",
+                 title="📊 Transações Evitadas por Subcanal",
                  color="Tribo",
                  text_auto=True)
     st.plotly_chart(fig, use_container_width=True)
