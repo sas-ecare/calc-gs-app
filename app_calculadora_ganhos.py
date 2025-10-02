@@ -7,8 +7,8 @@ from pathlib import Path
 
 # ====================== CONFIG INICIAL ======================
 st.set_page_config(
-    page_title="📶 Calculadora de Ganhos",
-    page_icon="🖩",  # Troque para "🖩" se quiser ícone de calculadora no navegador
+    page_title="🖩 Calculadora de Ganhos",
+    page_icon="🖩",  # Troque para "📶" se quiser ícone de calculadora no navegador
     layout="wide"
 )
 
@@ -202,4 +202,5 @@ if st.button("🚀 Calcular Transações Evitadas"):
                  color="Tribo",
                  text_auto=True)
     st.plotly_chart(fig, use_container_width=True)
+
 
