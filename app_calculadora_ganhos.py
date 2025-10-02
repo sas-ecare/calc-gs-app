@@ -70,7 +70,7 @@ if logo_bytes:
         f"""
         <h1 style='text-align: center; color: #8B0000; font-size: 60px;'>
             <img src='data:image/png;base64,{img_b64}' style='height:80px; vertical-align:middle; margin-right:10px'>
-            Calculadora de Ganhos - Volume de CR Evitado
+            Calculadora de Ganhos
         </h1>
         """,
         unsafe_allow_html=True
@@ -141,7 +141,7 @@ col1, _ = st.columns([2, 1])
 volume_esperado = col1.number_input("📥 Volume de Acessos com Potencial de Redução de CR", min_value=0, value=10000)
 
 # ========== CÁLCULO ==========
-if st.button("🚀 Calcular Volume de CR Evitado"):
+if st.button("🚀 Calcular Volume de CR"):
     df_final = df_subcanal[df_subcanal['SEGMENTO'] == segmento]
 
     if df_final.empty:
@@ -201,36 +201,44 @@ if st.button("🚀 Calcular Volume de CR Evitado"):
     df_lote = pd.DataFrame(resultados_lote)
     st.dataframe(df_lote, use_container_width=True)
 
-    # ================= PARETO AJUSTADO =================
-    df_lote_sorted = df_lote.sort_values("Volume de CR Evitado", ascending=False).reset_index(drop=True)
-    df_lote_sorted["% Acumulado"] = df_lote_sorted["Volume de CR Evitado"].cumsum() / df_lote_sorted["Volume de CR Evitado"].sum() * 100
-    df_lote_sorted["Pareto"] = np.where(df_lote_sorted["% Acumulado"] <= 80, "Top 80%", "Outros")
+   # 📉 Gráfico de Pareto
+    st.markdown("### 🔎 Análise de Pareto - Potencial de Ganho")
+    df_pareto = df_lote.sort_values("Transações Evitadas", ascending=False).reset_index(drop=True)
+    df_pareto["Acumulado"] = df_pareto["Transações Evitadas"].cumsum()
+    df_pareto["Acumulado %"] = 100 * df_pareto["Acumulado"] / df_pareto["Transações Evitadas"].sum()
 
-    fig_pareto = px.bar(
-        df_lote_sorted,
-        x="Subcanal",
-        y="Volume de CR Evitado",
-        color="Pareto",
-        color_discrete_map={"Top 80%": "red", "Outros": "lightgray"},
-        title="📈 Pareto - Volume de CR Evitado",
-        text="Volume de CR Evitado"
-    )
+    # Destacar 80%
+    df_pareto["Cor"] = np.where(df_pareto["Acumulado %"] <= 80, "crimson", "lightgray")
 
-    # Linha do % acumulado
-    fig_pareto.add_scatter(
-        x=df_lote_sorted["Subcanal"],
-        y=df_lote_sorted["% Acumulado"],
+    fig_pareto = go.Figure()
+
+    # Barras
+    fig_pareto.add_trace(go.Bar(
+        x=df_pareto["Subcanal"],
+        y=df_pareto["Transações Evitadas"],
+        name="Transações Evitadas",
+        marker_color=df_pareto["Cor"]
+    ))
+
+    # Linha acumulada
+    fig_pareto.add_trace(go.Scatter(
+        x=df_pareto["Subcanal"],
+        y=df_pareto["Acumulado %"],
+        name="Acumulado %",
         mode="lines+markers",
-        name="% Acumulado",
-        yaxis="y2",
-        line=dict(color="blue"),
-        marker=dict(size=6)
-    )
+        marker=dict(color="royalblue"),
+        yaxis="y2"
+    ))
 
     fig_pareto.update_layout(
-        yaxis=dict(title="Volume de CR Evitado"),
-        yaxis2=dict(overlaying="y", side="right", range=[0, 110], title="% Acumulado"),
-        legend=dict(title="Legenda", orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5)
+        title="Pareto das Transações Evitadas",
+        xaxis=dict(title="SUBCANAIS"),
+        yaxis=dict(title="TRANSAÇOES"),
+        yaxis2=dict(title="ACUMULADO %", overlaying="y", side="right", range=[0, 100]),
+        legend=dict(x=0.75, y=1.15, orientation="h"),
+        bargap=0.2
     )
 
     st.plotly_chart(fig_pareto, use_container_width=True)
+
+
