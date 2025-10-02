@@ -65,16 +65,16 @@ if logo_bytes:
     img_b64 = base64.b64encode(logo_bytes).decode()
     st.markdown(
         f"""
-        <h1 style='text-align: center; color: #8B0000; font-size: 44px;'>
-            <img src='data:image/png;base64,{img_b64}' style='height:60px; vertical-align:middle; margin-right:10px'>
-            Calculadora de Ganhos - Transações Evitadas
+        <h1 style='text-align: center; color: #8B0000; font-size: 60px;'>
+            <img src='data:image/png;base64,{img_b64}' style='height:150px; vertical-align:middle; margin-right:10px'>
+            Calculadora de Ganhos
         </h1>
         """,
         unsafe_allow_html=True
     )
 else:
     st.markdown(
-        "<h1 style='text-align: center; color: #8B0000; font-size: 44px;'>🖩 Calculadora de Ganhos - Transações Evitadas</h1>",
+        "<h1 style='text-align: center; color: #8B0000; font-size: 60px;'>🖩 Calculadora de Ganhos</h1>",
         unsafe_allow_html=True
     )
 
@@ -209,3 +209,4 @@ if st.button("🚀 Calcular Transações Evitadas"):
                  color="Tribo",
                  text_auto=True)
     st.plotly_chart(fig, use_container_width=True)
+
