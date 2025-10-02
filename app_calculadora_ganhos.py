@@ -59,15 +59,14 @@ def _find_asset_bytes(name_candidates):
 def load_logo_for_title():
     return _find_asset_bytes(["claro_logo", "logo_claro", "claro"])
 
-# ====================== CARREGAR LOGO NO TÍTULO ======================
+# ====================== CARREGAR LOGO NO TÍTULO ====================== #vertical-align:middle;
 logo_bytes = load_logo_for_title()
 if logo_bytes:
     img_b64 = base64.b64encode(logo_bytes).decode()
     st.markdown(
         f"""
         <h1 style='text-align: center; color: #8B0000; font-size: 80px;'>
-            Calculadora de Ganhos
-            <img src='data:image/png;base64,{img_b64}' style='height:150px; vertical-align:middle; margin-right:10px'>
+            Calculadora de Ganhos <img src='data:image/png;base64,{img_b64}' style='height:150px;  margin-right:10px'>
         </h1>
         """,
         unsafe_allow_html=True
@@ -209,6 +208,7 @@ if st.button("🚀 Calcular Transações Evitadas"):
                  color="Tribo",
                  text_auto=True)
     st.plotly_chart(fig, use_container_width=True)
+
 
 
 
