@@ -240,6 +240,13 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     st.dataframe(df_top80[["Subcanal", "Tribo", "Volume de CR Evitado", "Acumulado %"]],
                  use_container_width=True)
 
+    # 🧠 Insight automático
+    total_ev = df_lote["Volume de CR Evitado"].sum()
+    top80_names = ", ".join(df_top80["Subcanal"].tolist())
+    st.info(f"🧠 Insight: O volume total estimado de CR evitado é **{total_ev:,.0f}**. "
+            f"Apenas **{len(df_top80)} subcanais** concentram 80% do potencial de ganho, "
+            f"sendo eles: **{top80_names}**. Estes devem ser priorizados para maximizar impacto.")
+
     # 📥 Download Excel com 2 abas
     buffer = io.BytesIO()
     with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
