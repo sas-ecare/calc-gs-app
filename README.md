@@ -1,19 +1,24 @@
-# calculadora-ganhos
-
 # 🧮 Calculadora de Ganhos
 
-Simulador interno para estimativa de transações evitadas por canal digital, baseado em CR e % retido.
+Simulador interno da equipe de Analytics para estimar **Transações Evitadas** nos canais digitais (App, Bot, Web) com base em:
 
-> ⚠️ Acesso restrito — apenas colaboradores autorizados.
+- Volume esperado de transações
+- Taxa de conversão (CR)
+- Retenção digital por canal
+- Histórico real da base "Tabela Performance"
 
-## Como usar
-
-1. Faça upload da base (aba `Tabela Performance`)
-2. Selecione o mês, segmento e subcanal
-3. Informe o volume esperado de transações
-4. Veja o resultado por subcanal + download em CSV
+## 🔐 Acesso restrito
+Este app é de uso **interno** e **restrito aos colaboradores da Claro**.
 
 ---
-Desenvolvido com Streamlit + Python por Gustavo Godoy Freitas.
 
+## 📦 Como utilizar
 
+### 1. Executar localmente
+Clone o repositório e instale as dependências:
+
+```bash
+git clone https://github.com/sua-org/seu-repo.git
+cd seu-repo
+pip install -r requirements.txt
+streamlit run app_calculadora_ganhos.py
