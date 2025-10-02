@@ -242,11 +242,12 @@ if st.button("🚀 Calcular Transações Evitadas"):
 
     fig_pareto.update_layout(
         title="Pareto das Transações Evitadas",
-        xaxis=dict(title="Subcanais"),
-        yaxis=dict(title="Transações Evitadas"),
-        yaxis2=dict(title="Acumulado %", overlaying="y", side="right", range=[0, 100]),
+        xaxis=dict(title="SUBCANAIS"),
+        yaxis=dict(title="TRANSAÇOES"),
+        yaxis2=dict(title="ACUMULADO %", overlaying="y", side="right", range=[0, 100]),
         legend=dict(x=0.75, y=1.15, orientation="h"),
         bargap=0.2
     )
 
     st.plotly_chart(fig_pareto, use_container_width=True)
+
