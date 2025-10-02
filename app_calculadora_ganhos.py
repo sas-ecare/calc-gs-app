@@ -64,7 +64,7 @@ logo_bytes = load_claro_logo()
 if logo_bytes:
     img_b64 = base64.b64encode(logo_bytes).decode()
     st.markdown(
-        f"<div style='text-align:right'><img src='data:image/png;base64,{img_b64}' height='250'></div>",
+        f"<div style='text-align:right'><img src='data:image/png;base64,{img_b64}' height='150'></div>",
         unsafe_allow_html=True
     )
 
@@ -202,5 +202,6 @@ if st.button("🚀 Calcular Transações Evitadas"):
                  color="Tribo",
                  text_auto=True)
     st.plotly_chart(fig, use_container_width=True)
+
 
 
