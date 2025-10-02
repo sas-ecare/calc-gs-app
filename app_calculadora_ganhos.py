@@ -163,6 +163,14 @@ if st.button("🚀 Calcular Volume de CR Evitado"):
 
     volume_cr_evitado = (volume_esperado / tx_trans_acessos) * cr_segmento * retido_pct
 
+    # ================= KPIs EXECUTIVOS =================
+    st.markdown("## 🏆 KPIs Executivos")
+    kpi1, kpi2, kpi3 = st.columns(3)
+    kpi1.metric("📊 Total Estimado (CR Evitado)", f"{volume_cr_evitado:,.0f}".replace(",", "."))
+    kpi2.metric("📉 Retido Médio", f"{retido_pct*100:.2f}%")
+    kpi3.metric("🥇 Subcanal Líder", subcanal)
+
+    # ================= RESULTADOS =================
     st.markdown("---")
     st.markdown("### 📊 Resultados - Volume de CR Evitado")
     col1, col2, col3 = st.columns(3)
@@ -172,9 +180,8 @@ if st.button("🚀 Calcular Volume de CR Evitado"):
 
     valor_formatado = f"{volume_cr_evitado:,.0f}".replace(",", ".")
     st.success(f"✅ Volume de CR Evitado: **{valor_formatado}**")
-    st.caption("Fórmula: Acessos Esperados ÷ (Transações / Acessos) × CR × % Retido")
 
-    # DASHBOARD POR SUBCANAIS
+    # ================= DASHBOARD POR SUBCANAIS =================
     st.markdown("---")
     st.markdown("### 📄 Simulação para Todos os Subcanais")
     resultados_lote = []
@@ -206,35 +213,15 @@ if st.button("🚀 Calcular Volume de CR Evitado"):
     df_lote = pd.DataFrame(resultados_lote)
     st.dataframe(df_lote, use_container_width=True)
 
-    # DOWNLOAD CSV
-    csv = df_lote.to_csv(index=False).encode('utf-8')
-    st.download_button("📥 Baixar Simulação Completa (CSV)", csv, "simulacao_cr.csv", "text/csv")
-
-    # DOWNLOAD EXCEL (com openpyxl para evitar erro)
-    buffer = io.BytesIO()
-    with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
-        df_lote.to_excel(writer, index=False, sheet_name="Simulacao_CR")
-    st.download_button(
-        label="📊 Baixar em Excel",
-        data=buffer.getvalue(),
-        file_name="simulacao_cr.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-
-    # GRÁFICO DE BARRAS
-    fig = px.bar(df_lote.sort_values("Volume de CR Evitado", ascending=False),
-                 x="Subcanal", y="Volume de CR Evitado",
-                 title="📊 Volume de CR Evitado por Subcanal",
-                 color="Tribo", text_auto=True)
-    st.plotly_chart(fig, use_container_width=True)
-
-    # GRÁFICO PARETO
+    # ================= PARETO =================
     df_lote_sorted = df_lote.sort_values("Volume de CR Evitado", ascending=False).reset_index(drop=True)
     df_lote_sorted["% Acumulado"] = df_lote_sorted["Volume de CR Evitado"].cumsum() / df_lote_sorted["Volume de CR Evitado"].sum() * 100
+    df_lote_sorted["Pareto"] = np.where(df_lote_sorted["% Acumulado"] <= 80, "Top 80%", "Outros")
 
     fig_pareto = px.bar(df_lote_sorted, x="Subcanal", y="Volume de CR Evitado",
-                        title="📈 Pareto - Volume de CR Evitado",
-                        text_auto=True)
+                        color="Pareto",
+                        color_discrete_map={"Top 80%": "red", "Outros": "lightgray"},
+                        title="📈 Pareto - Volume de CR Evitado", text_auto=True)
     fig_pareto.add_scatter(x=df_lote_sorted["Subcanal"], y=df_lote_sorted["% Acumulado"],
                            mode="lines+markers", name="% Acumulado", yaxis="y2")
 
@@ -244,3 +231,28 @@ if st.button("🚀 Calcular Volume de CR Evitado"):
         yaxis=dict(title="Volume de CR Evitado")
     )
     st.plotly_chart(fig_pareto, use_container_width=True)
+
+    # ================= TABELA TOP 80% =================
+    top80_df = df_lote_sorted[df_lote_sorted["Pareto"] == "Top 80%"]
+    st.markdown("### 🏅 Subcanais Prioritários (Top 80%)")
+    st.dataframe(top80_df, use_container_width=True)
+
+    # ================= INSIGHT AUTOMÁTICO =================
+    st.markdown("### 💡 Insight Automático")
+    top_sub = top80_df.iloc[0]["Subcanal"] if not top80_df.empty else "Nenhum"
+    total_cr = df_lote_sorted["Volume de CR Evitado"].sum()
+    pct_top80 = top80_df["Volume de CR Evitado"].sum() / total_cr * 100 if total_cr > 0 else 0
+    st.success(f"🔎 Observação: Os subcanais do Top 80% concentram cerca de **{pct_top80:.1f}%** "
+               f"do potencial de redução de CR. O principal destaque é o subcanal **{top_sub}**.")
+
+    # ================= DOWNLOAD EXCEL =================
+    buffer = io.BytesIO()
+    with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+        df_lote.to_excel(writer, index=False, sheet_name="Resultados")
+        top80_df.to_excel(writer, index=False, sheet_name="Top_80_Pareto")
+    st.download_button(
+        label="📊 Baixar em Excel (2 abas)",
+        data=buffer.getvalue(),
+        file_name="simulacao_cr.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
