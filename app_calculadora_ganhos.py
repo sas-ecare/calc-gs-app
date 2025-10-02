@@ -65,7 +65,7 @@ if logo_bytes:
     img_b64 = base64.b64encode(logo_bytes).decode()
     st.markdown(
         f"""
-        <h1 style='text-align: center; color: #8B0000; font-size: 60px;'>
+        <h1 style='text-align: center; color: #8B0000; font-size: 80px;'>
             Calculadora de Ganhos
             <img src='data:image/png;base64,{img_b64}' style='height:150px; vertical-align:middle; margin-right:10px'>
         </h1>
@@ -209,5 +209,6 @@ if st.button("🚀 Calcular Transações Evitadas"):
                  color="Tribo",
                  text_auto=True)
     st.plotly_chart(fig, use_container_width=True)
+
 
 
