@@ -217,6 +217,9 @@ if st.button("🚀 Calcular Transações Evitadas"):
     df_pareto["Acumulado"] = df_pareto["Transações Evitadas"].cumsum()
     df_pareto["Acumulado %"] = 100 * df_pareto["Acumulado"] / df_pareto["Transações Evitadas"].sum()
 
+    # Destacar 80%
+    df_pareto["Cor"] = np.where(df_pareto["Acumulado %"] <= 80, "crimson", "lightgray")
+
     fig_pareto = go.Figure()
 
     # Barras
@@ -224,7 +227,7 @@ if st.button("🚀 Calcular Transações Evitadas"):
         x=df_pareto["Subcanal"],
         y=df_pareto["Transações Evitadas"],
         name="Transações Evitadas",
-        marker_color="crimson"
+        marker_color=df_pareto["Cor"]
     ))
 
     # Linha acumulada
@@ -237,7 +240,6 @@ if st.button("🚀 Calcular Transações Evitadas"):
         yaxis="y2"
     ))
 
-    # Layout duplo eixo
     fig_pareto.update_layout(
         title="Pareto das Transações Evitadas",
         xaxis=dict(title="Subcanais"),
