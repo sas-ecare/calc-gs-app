@@ -8,14 +8,14 @@ from pathlib import Path
 # ====================== CONFIG INICIAL ======================
 st.set_page_config(
     page_title="🖩 Calculadora de Ganhos",
-    page_icon="🖩",  # Troque para "📶" se quiser ícone de calculadora no navegador
+    page_icon="📶",  # Troque para "🖩" se quiser ícone de calculadora no navegador
     layout="wide"
 )
 
 # ====================== AUTENTICAÇÃO COM SENHA ======================
 def check_password():
     def password_entered():
-        if st.session_state["password"] == "claro@123":
+        if st.session_state["password"] == "claro2024!":
             st.session_state["authenticated"] = True
         else:
             st.session_state["authenticated"] = False
@@ -202,5 +202,3 @@ if st.button("🚀 Calcular Transações Evitadas"):
                  color="Tribo",
                  text_auto=True)
     st.plotly_chart(fig, use_container_width=True)
-
-
