@@ -103,10 +103,26 @@ retido_dict = {
 st.markdown("### 🔎 Filtros de Cenário")
 col1, col2 = st.columns(2)
 
+# 🔹 Apenas meses com dados de VOL_KPI > 0
+meses_validos = (
+    df.groupby(df['ANOMES'].dt.strftime('%Y-%m'))['VOL_KPI']
+    .sum()
+    .loc[lambda x: x > 0]
+    .index
+    .tolist()
+)
+
 mes_atual_str = pd.to_datetime(datetime.today()).strftime('%Y-%m')
-anomes = col1.selectbox("🗓️ Mês", sorted(df['ANOMES'].dt.strftime('%Y-%m').dropna().unique()),
-                        index=sorted(df['ANOMES'].dt.strftime('%Y-%m').dropna().unique()).index(mes_atual_str)
-                        if mes_atual_str in df['ANOMES'].dt.strftime('%Y-%m').dropna().unique() else 0)
+
+# Aviso se mês atual não tem dados
+if mes_atual_str not in meses_validos:
+    st.warning(f"⚠️ O mês atual ({mes_atual_str}) ainda não possui dados carregados.")
+
+anomes = col1.selectbox(
+    "🗓️ Mês",
+    sorted(meses_validos),
+    index=sorted(meses_validos).index(mes_atual_str) if mes_atual_str in meses_validos else 0
+)
 
 segmento = col2.selectbox("📶 Segmento", sorted(df['SEGMENTO'].dropna().unique()))
 anomes_dt = pd.to_datetime(anomes)
@@ -240,11 +256,9 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     st.dataframe(df_top80[["Subcanal", "Tribo", "Volume de CR Evitado", "Acumulado %"]],
                  use_container_width=True)
 
-    # 🧠 Insight automático (corrigindo separador)
+    # 🧠 Insight automático
     total_ev = df_lote["Volume de CR Evitado"].sum()
     top80_names = ", ".join(df_top80["Subcanal"].tolist())
-
-    # aplica formatação e troca vírgula por ponto
     total_ev_fmt = f"{total_ev:,.0f}".replace(",", ".")
 
     insight_text = (
@@ -257,7 +271,6 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
 
     st.markdown(insight_text)
 
-
     # 📥 Download Excel com 2 abas
     buffer = io.BytesIO()
     with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
@@ -269,6 +282,3 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
-
-
-
