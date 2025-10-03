@@ -259,14 +259,15 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     st.dataframe(df_top80[["Subcanal", "Tribo", "Volume de CR Evitado", "Acumulado %"]],
                  use_container_width=True)
 
-    # 🧠 Insight automático
+    # 🧠 Insights
     total_ev = df_lote["Volume de CR Evitado"].sum()
     top80_names = ", ".join(df_top80["Subcanal"].tolist())
     total_ev_fmt = f"{total_ev:,.0f}".replace(",", ".")
     insight_text = (
         f"🧠 **Insight Automático**\n\n"
-        f"- O volume total estimado de **CR evitado** é **{total_ev_fmt}**.\n\n"
-        f"- Apenas **{len(df_top80)} subcanais** concentram **80%** do potencial de ganho.\n\n"
+        f"- O volume total estimado de **CR evitado** para o subcanal selecionado foi de: **{valor_formatado}**.\n\n"
+        f"- A estimativa do **CR evitado** para todos os canais seria de: **{total_ev_fmt}**.\n\n"
+        f"- **{len(df_top80)} subcanais** concentram **80%** do potencial de ganho.\n\n"
         f"- Subcanais prioritários: **{top80_names}**.\n\n"
         f"👉 Recomenda-se priorizar estes subcanais para maximizar o impacto."
     )
