@@ -88,9 +88,22 @@ def carregar_dados():
     df['ANOMES'] = pd.to_datetime(df['ANOMES'].astype(str), format='%Y%m', errors='coerce')
     df['VOL_KPI'] = pd.to_numeric(df['VOL_KPI'], errors='coerce')
     df['CR_DIR'] = pd.to_numeric(df['CR_DIR'], errors='coerce')
+    df['TP_META'] = df['TP_META'].astype(str).str.upper()
     return df
 
 df = carregar_dados()
+
+# ====================== FILTROS DE MESES VÁLIDOS ======================
+meses_validos = (
+    df.loc[
+        (df['TP_META'] == "REAL") & 
+        (df['VOL_KPI'] > 0)
+    ]
+    .groupby(df['ANOMES'].dt.strftime('%Y-%m'))['VOL_KPI']
+    .sum()
+    .index
+    .tolist()
+)
 
 # ========== TAXAS FIXAS ==========
 retido_dict = {
@@ -103,38 +116,20 @@ retido_dict = {
 st.markdown("### 🔎 Filtros de Cenário")
 col1, col2 = st.columns(2)
 
-
-
-
-# 🔹 Apenas meses com dados de VOL_KPI > 0
-
-meses_validos = (
-    df.loc[
-        (df['TP_META'].str.upper() == "REAL") & 
-        (df['VOL_KPI'] > 0)
-    ]
-    .groupby(df['ANOMES'].dt.strftime('%Y-%m'))['VOL_KPI']
-    .sum()
-    .index
-    .tolist()
-)
-
-
 mes_atual_str = pd.to_datetime(datetime.today()).strftime('%Y-%m')
-
-# Aviso se mês atual não tem dados
-if mes_atual_str not in meses_validos:
-    st.warning(f"⚠️ O mês atual ({mes_atual_str}) ainda não possui dados carregados.")
-
 anomes = col1.selectbox(
-    "🗓️ Mês",
+    "🗓️ Mês", 
     sorted(meses_validos),
     index=sorted(meses_validos).index(mes_atual_str) if mes_atual_str in meses_validos else 0
 )
 
+# ⚠️ Aviso automático se mês atual não tiver dados
+if mes_atual_str not in meses_validos:
+    st.warning("⚠️ O mês atual ainda não possui dados carregados. Selecione um mês anterior.")
+
 segmento = col2.selectbox("📶 Segmento", sorted(df['SEGMENTO'].dropna().unique()))
 anomes_dt = pd.to_datetime(anomes)
-tp_meta = "Real"
+tp_meta = "REAL"
 
 df_segmento = df[
     (df['ANOMES'] == anomes_dt) &
@@ -268,15 +263,13 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     total_ev = df_lote["Volume de CR Evitado"].sum()
     top80_names = ", ".join(df_top80["Subcanal"].tolist())
     total_ev_fmt = f"{total_ev:,.0f}".replace(",", ".")
-
     insight_text = (
-    f"🧠 **Insight Automático**\n\n"
-    f"- O volume total estimado de **CR evitado** é **{total_ev_fmt}**.\n\n"
-    f"- Apenas **{len(df_top80)} subcanais** concentram **80%** do potencial de ganho.\n\n"
-    f"- Subcanais prioritários: **{top80_names}**.\n\n"
-    f"👉 Recomenda-se priorizar estes subcanais para maximizar o impacto."
+        f"🧠 **Insight Automático**\n\n"
+        f"- O volume total estimado de **CR evitado** é **{total_ev_fmt}**.\n\n"
+        f"- Apenas **{len(df_top80)} subcanais** concentram **80%** do potencial de ganho.\n\n"
+        f"- Subcanais prioritários: **{top80_names}**.\n\n"
+        f"👉 Recomenda-se priorizar estes subcanais para maximizar o impacto."
     )
-
     st.markdown(insight_text)
 
     # 📥 Download Excel com 2 abas
@@ -290,4 +283,3 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
-
