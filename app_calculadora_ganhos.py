@@ -103,14 +103,22 @@ retido_dict = {
 st.markdown("### 🔎 Filtros de Cenário")
 col1, col2 = st.columns(2)
 
+
+
+
 # 🔹 Apenas meses com dados de VOL_KPI > 0
+
 meses_validos = (
-    df.groupby(df['ANOMES'].dt.strftime('%Y-%m'))['VOL_KPI']
+    df.loc[
+        (df['TP_META'].str.upper() == "REAL") & 
+        (df['VOL_KPI'] > 0)
+    ]
+    .groupby(df['ANOMES'].dt.strftime('%Y-%m'))['VOL_KPI']
     .sum()
-    .loc[lambda x: x > 0]
     .index
     .tolist()
 )
+
 
 mes_atual_str = pd.to_datetime(datetime.today()).strftime('%Y-%m')
 
@@ -282,3 +290,4 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
