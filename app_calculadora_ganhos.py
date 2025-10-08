@@ -212,13 +212,35 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     c2.metric("CR Segmento (%)", f"{cr_segmento*100:.2f}")
     c3.metric(f"% Retido ({tribo})", f"{retido_pct*100:.2f}")
 
-    valor_formatado = f"{cr_evitado:,.0f}".replace(",", ".")
-    st.success(f"✅ Volume de CR Evitado Estimado: **{valor_formatado}**")
-
+   
     c4, c5, c6 = st.columns(3)
     c4.metric("📉 Ligações Evitadas", valor_formatado)
     c5.metric("📊 Volume de Acessos", f"{acessos_estimados:,.0f}".replace(",", "."))
     c6.metric("👤 MAU (CPF)", f"{mau_cpf:,.0f}".replace(",", "."))
+
+
+    # ====================== RESULTADO DESTACADO ======================
+    valor_formatado = f"{cr_evitado:,.0f}".replace(",", ".")
+
+    st.markdown(
+    f"""
+    <div style='background-color:#f8f9fa;
+                border:2px solid #8B0000;
+                border-radius:12px;
+                padding:20px;
+                margin-top:20px;
+                text-align:center;
+                color:#8B0000;
+                font-size:42px;
+                font-weight:bold;
+                box-shadow:0 4px 10px rgba(0,0,0,0.1);'>
+        ✅ Volume de CR Evitado Estimado:<br>
+        <span style='font-size:56px;'>{valor_formatado}</span>
+    </div>
+    """,
+    unsafe_allow_html=True
+    )
+
 
     # ====================== SIMULAÇÃO EM LOTE ======================
     st.markdown("---")
@@ -280,3 +302,4 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         df_lote.to_excel(writer, sheet_name="Resultados", index=False)
         df_top80.to_excel(writer, sheet_name="Top_80_Pareto", index=False)
     st.download_button("📥 Baixar Excel Completo", buffer.getvalue(), "simulacao_cr.xlsx", "application/vnd.ms-excel")
+
