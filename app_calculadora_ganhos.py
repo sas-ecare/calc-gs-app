@@ -1,38 +1,38 @@
-# app_calculadora_ganhos.py
-import io
+import streamlit as st
+import pandas as pd
+from datetime import datetime
+import numpy as np
 import base64
 from pathlib import Path
-from datetime import datetime
-
-import numpy as np
-import pandas as pd
 import plotly.graph_objects as go
-import streamlit as st
+import io
 
 # ====================== CONFIG INICIAL ======================
 st.set_page_config(
     page_title="🖩 Calculadora de Ganhos",
     page_icon="📶",
-    layout="wide",
+    layout="wide"
 )
 
 # ====================== AUTENTICAÇÃO COM SENHA ======================
 def check_password():
     def password_entered():
-        st.session_state["authenticated"] = (
-            st.session_state.get("password", "") == "claro@123"
-        )
-        if not st.session_state["authenticated"]:
+        if st.session_state.get("password") == "claro@123":
+            st.session_state["authenticated"] = True
+        else:
+            st.session_state["authenticated"] = False
             st.error("Senha incorreta. Tente novamente.")
 
-    if not st.session_state.get("authenticated", False):
-        st.text_input("🔐 Insira a senha para acessar:", type="password",
-                      on_change=password_entered, key="password")
+    if "authenticated" not in st.session_state:
+        st.session_state["authenticated"] = False
+
+    if not st.session_state["authenticated"]:
+        st.text_input("🔐 Insira a senha para acessar:", type="password", on_change=password_entered, key="password")
         st.stop()
 
 check_password()
 
-# ====================== ASSETS (LOGO NO TÍTULO) ======================
+# ====================== FUNÇÃO PARA CARREGAR IMAGEM ======================
 def _find_asset_bytes(name_candidates):
     exts = [".png", ".jpg", ".jpeg", ".webp"]
     try:
@@ -43,9 +43,9 @@ def _find_asset_bytes(name_candidates):
         script_dir,
         script_dir / "assets",
         script_dir / "static",
-        Path.cwd(),
-        Path.cwd() / "assets",
-        Path.cwd() / "static",
+        Path.cwd().resolve(),
+        Path.cwd().resolve() / "assets",
+        Path.cwd().resolve() / "static",
     ]
     for d in search_dirs:
         for base in name_candidates:
@@ -61,194 +61,127 @@ def _find_asset_bytes(name_candidates):
 def load_logo_for_title():
     return _find_asset_bytes(["claro_logo", "logo_claro", "claro"])
 
+# ====================== CARREGAR LOGO NO TÍTULO ====================== 
 logo_bytes = load_logo_for_title()
 if logo_bytes:
     img_b64 = base64.b64encode(logo_bytes).decode()
     st.markdown(
         f"""
-        <h1 style='text-align:center; color:#8B0000; font-size:58px;'>
-            <img src='data:image/png;base64,{img_b64}'
-                 style='height:72px; vertical-align:middle; margin-right:14px'>
+        <h1 style='text-align: center; color: #8B0000; font-size: 60px;'>
+            <img src='data:image/png;base64,{img_b64}' style='height:80px; vertical-align:middle; margin-right:15px'>
             Calculadora de Ganhos
         </h1>
         """,
-        unsafe_allow_html=True,
+        unsafe_allow_html=True
     )
 else:
     st.markdown(
-        "<h1 style='text-align:center; color:#8B0000;'>🖩 Calculadora de Ganhos</h1>",
-        unsafe_allow_html=True,
+        "<h1 style='text-align: center; color: #8B0000; font-size: 50px;'>🖩 Calculadora de Ganhos</h1>",
+        unsafe_allow_html=True
     )
 
-# ====================== CARREGAR DADOS ======================
+# ====================== CARGA DE DADOS ======================
 URL_GITHUB = "https://raw.githubusercontent.com/gustavo3-freitas/base_calculadora/main/Tabela_Performance.xlsx"
+# Opcional: se quiser um arquivo separado apenas para apoio, defina a URL aqui:
+URL_GITHUB_APOIO_ALT = None  # exemplo: "https://raw.githubusercontent.com/.../Base_Apoio.xlsx"
 
-DEFAULTS = {
-    "CR": {"Móvel": 0.4947, "Residencial": 0.4989},
-    "RETIDO": {"App": 0.9169, "Bot": 0.8835, "Web": 0.9027},
-    "TX_UU_CPF": 12.28,
-    "TX_FALLBACK": 1.75,
+@st.cache_data(show_spinner=True)
+def carregar_dados():
+    # Lê tabela principal
+    df = pd.read_excel(URL_GITHUB, sheet_name="Tabela Performance")
+    df['ANOMES'] = pd.to_datetime(df['ANOMES'].astype(str), format='%Y%m', errors='coerce')
+    df['VOL_KPI'] = pd.to_numeric(df['VOL_KPI'], errors='coerce')
+    df['CR_DIR']  = pd.to_numeric(df.get('CR_DIR', np.nan), errors='coerce')
+
+    # Tenta ler a aba "BASE APOIO" no mesmo arquivo
+    apoio_params = {"TX_UU_CPF": 12.28}  # fallback padrão
+    try:
+        xls = pd.ExcelFile(URL_GITHUB)
+        possible_names = ["BASE APOIO", "BASE_APOIO", "BASE APOIO 23", "BASE_APOIO_23"]
+        apoio_df = None
+        for nm in possible_names:
+            if nm in xls.sheet_names:
+                apoio_df = pd.read_excel(xls, sheet_name=nm, header=None)
+                break
+
+        # Se não encontrou no mesmo arquivo, tenta arquivo alternativo
+        if apoio_df is None and URL_GITHUB_APOIO_ALT:
+            xls2 = pd.ExcelFile(URL_GITHUB_APOIO_ALT)
+            for nm in possible_names:
+                if nm in xls2.sheet_names:
+                    apoio_df = pd.read_excel(xls2, sheet_name=nm, header=None)
+                    break
+
+        # Tenta extrair TX_UU_CPF (ex: célula tipo "L5" ou linha com texto correspondente)
+        if apoio_df is not None:
+            # 1) Procura por uma célula com o texto da label e pega o número vizinho
+            label_candidates = ["TX UU CPF", "TX_UU_CPF", "TX UU/CPF", "TX UU CPF (MAU)"]
+            tx_found = None
+            for i in range(apoio_df.shape[0]):
+                for j in range(apoio_df.shape[1]):
+                    val = apoio_df.iat[i, j]
+                    if isinstance(val, str) and any(lbl.lower() in val.lower() for lbl in label_candidates):
+                        # tenta ler a célula à direita
+                        if j + 1 < apoio_df.shape[1]:
+                            maybe_num = pd.to_numeric(apoio_df.iat[i, j+1], errors="coerce")
+                            if pd.notna(maybe_num):
+                                tx_found = float(maybe_num)
+                                break
+                if tx_found is not None:
+                    break
+            # 2) Se não achou por rótulo, tenta procurar algum número plausível na planilha
+            if tx_found is None:
+                numeric_vals = pd.to_numeric(apoio_df.select_dtypes(exclude=[object]).stack(), errors="coerce")
+                numeric_vals = numeric_vals[~numeric_vals.isna()]
+                # se houver algum número com ordem de grandeza parecida (ex: entre 1 e 100)
+                plausible = numeric_vals[(numeric_vals > 0.1) & (numeric_vals < 100)]
+                if not plausible.empty:
+                    tx_found = float(plausible.iloc[0])
+            if tx_found is not None and tx_found > 0:
+                apoio_params["TX_UU_CPF"] = tx_found
+    except Exception:
+        pass  # mantém fallback 12.28
+
+    return df, apoio_params
+
+df, apoio_params = carregar_dados()
+
+# ======= TAXAS FIXAS =======
+retido_dict = {
+    'App': 0.916893598,
+    'Bot': 0.883475537,
+    'Web': 0.902710768
 }
 
-def _normalize_percent(x):
-    """Aceita '49,47%', '49.47%', 0.4947, 49.47 etc e devolve fração (0-1)"""
-    if pd.isna(x):
-        return np.nan
-    if isinstance(x, str):
-        x = x.replace("%", "").replace(".", "").replace(",", ".")
-    try:
-        val = float(x)
-        if val > 1:
-            val = val / 100.0
-        return val
-    except Exception:
-        return np.nan
-
-def _try_get_sheet(xls, like_list, default=None):
-    names = [n for n in xls.sheet_names]
-    for like in like_list:
-        for n in names:
-            if like.lower() in n.lower():
-                return n
-    return default
-
-def _extract_apoio_params(df_apoio_raw: pd.DataFrame) -> dict:
-    """
-    Varre a aba 'Base de Apoio' (estrutura livre) e tenta extrair:
-      - CR por segmento (Móvel, Residencial)
-      - Retido Digital por tribo (App, Bot, Web)
-      - TX_UU_CPF (se houver)
-    Retorna dict com fallback para DEFAULTS quando necessário.
-    """
-    params = {
-        "CR": DEFAULTS["CR"].copy(),
-        "RETIDO": DEFAULTS["RETIDO"].copy(),
-        "TX_UU_CPF": DEFAULTS["TX_UU_CPF"],
-    }
-
-    df_txt = df_apoio_raw.astype(str).applymap(lambda s: s.strip())
-
-    # --- CR por segmento ---
-    for seg_key in ["Móvel", "Movel", "M\u00f3vel", "Residencial"]:
-        mask = df_txt.apply(lambda col: col.str.fullmatch(seg_key, case=False)).any(axis=1)
-        idxs = list(np.where(mask)[0])
-        for idx in idxs:
-            row_vals = df_txt.iloc[idx].tolist()
-            # pega primeiro numérico da linha
-            for cell in row_vals[1:]:
-                frac = _normalize_percent(cell)
-                if not np.isnan(frac):
-                    if "mov" in seg_key.lower():
-                        params["CR"]["Móvel"] = frac
-                    else:
-                        params["CR"]["Residencial"] = frac
-                    break
-
-    # --- Retido por tribo ---
-    for tribo in ["App", "Bot", "Web"]:
-        mask = df_txt.apply(lambda col: col.str.fullmatch(tribo, case=False)).any(axis=1)
-        idxs = list(np.where(mask)[0])
-        for idx in idxs:
-            row_vals = df_txt.iloc[idx].tolist()
-            for cell in row_vals[1:]:
-                frac = _normalize_percent(cell)
-                if not np.isnan(frac):
-                    params["RETIDO"][tribo] = frac
-                    break
-
-    # --- TX_UU_CPF (número, não %). Procura label "TX UU CPF".
-    where = np.where(df_txt.apply(lambda col: col.str.contains("TX UU CPF", case=False, na=False)).values)
-    if len(where[0]) > 0:
-        r, c = where[0][0], where[1][0]
-        # tenta pegar uma célula numérica ao lado/esquerda/direita/mesma linha
-        candidates = []
-        # direita
-        if c + 1 < df_txt.shape[1]:
-            candidates.append(df_txt.iat[r, c + 1])
-        # esquerda
-        if c - 1 >= 0:
-            candidates.append(df_txt.iat[r, c - 1])
-        # mesma linha, próximos
-        candidates += df_txt.iloc[r].tolist()
-
-        for cell in candidates:
-            s = str(cell).strip().replace(",", ".")
-            try:
-                val = float(s)
-                if val > 0:
-                    params["TX_UU_CPF"] = val
-                    break
-            except Exception:
-                pass
-
-    return params
-
-@st.cache_data(show_spinner=False)
-def carregar_dados(file_bytes: bytes | None = None):
-    # abre ExcelFile de URL ou bytes
-    if file_bytes:
-        xls = pd.ExcelFile(io.BytesIO(file_bytes))
-    else:
-        xls = pd.ExcelFile(URL_GITHUB)
-
-    # encontra abas por "apelido"
-    perf_name = _try_get_sheet(xls, ["tabela performance", "performance", "tabela"], xls.sheet_names[0])
-    apoio_name = _try_get_sheet(xls, ["base de apoio", "base apoio", "apoio"], None)
-
-    # lê performance
-    df_perf = pd.read_excel(xls, sheet_name=perf_name)
-    # normalizações mínimas
-    for col in ["ANOMES", "TP_META", "SEGMENTO", "NM_TORRE", "NM_SUBCANAL", "NM_KPI", "VOL_KPI"]:
-        if col not in df_perf.columns:
-            # não quebra se faltar ANOMES, CR_DIR etc.
-            df_perf[col] = np.nan
-
-    # filtros estáveis
-    df_perf["TP_META"] = df_perf["TP_META"].astype(str).str.strip()
-    df_perf = df_perf[df_perf["TP_META"].str.lower().eq("real") | df_perf["TP_META"].isna()]
-
-    # tipos numéricos
-    df_perf["VOL_KPI"] = pd.to_numeric(df_perf["VOL_KPI"], errors="coerce")
-    if "CR_DIR" in df_perf.columns:
-        df_perf["CR_DIR"] = pd.to_numeric(df_perf.get("CR_DIR"), errors="coerce")
-
-    # lê apoio (se existir)
-    apoio_params = DEFAULTS.copy()
-    if apoio_name:
-        df_apoio_raw = pd.read_excel(xls, sheet_name=apoio_name, header=None)
-        apoio_params = DEFAULTS.copy()
-        apoio_params.update(_extract_apoio_params(df_apoio_raw))
-
-    return df_perf, apoio_params
-
-# --- tentativas de carga: 1) GitHub; 2) Upload manual (fallback)
-try:
-    df, apoio_params = carregar_dados(None)
-except Exception as e:
-    st.error("❌ Não foi possível ler do GitHub. Envie o arquivo .xlsx manualmente.")
-    uploaded = st.file_uploader("📂 Envie o Excel com as abas 'Tabela Performance' e 'Base de Apoio'", type=["xlsx"])
-    if not uploaded:
-        st.stop()
-    df, apoio_params = carregar_dados(uploaded.getvalue())
-
-# ====================== TAXAS (vêm do apoio com fallback) ======================
-retido_dict = apoio_params["RETIDO"]
-cr_por_segmento = apoio_params["CR"]
-
-# ====================== FILTROS (SEM MÊS) ======================
+# ======= FILTROS =======
 st.markdown("### 🔎 Filtros de Cenário")
-
 col1, col2 = st.columns(2)
-segmento = col1.selectbox("📶 Segmento", sorted(x for x in df["SEGMENTO"].dropna().unique()))
-# lista de subcanais daquele segmento
-df_seg = df[df["SEGMENTO"] == segmento]
-subcanais_disponiveis = sorted(df_seg["NM_SUBCANAL"].dropna().unique())
-subcanal = col2.selectbox("📌 Subcanal", subcanais_disponiveis)
 
-# tribo detectada
-df_sub = df_seg[df_seg["NM_SUBCANAL"] == subcanal]
-tribo_detectada = df_sub["NM_TORRE"].dropna().unique()
-tribo = tribo_detectada[0] if len(tribo_detectada) else "Indefinido"
+mes_atual_str = pd.to_datetime(datetime.today()).strftime('%Y-%m')
+anomes_opcoes = sorted(df['ANOMES'].dt.strftime('%Y-%m').dropna().unique())
+anomes = col1.selectbox(
+    "🗓️ Mês",
+    anomes_opcoes,
+    index=anomes_opcoes.index(mes_atual_str) if mes_atual_str in anomes_opcoes else 0
+)
+
+segmento = col2.selectbox("📶 Segmento", sorted(df['SEGMENTO'].dropna().unique()))
+
+anomes_dt = pd.to_datetime(anomes)
+tp_meta = "Real"
+
+df_segmento = df[
+    (df['ANOMES'] == anomes_dt) &
+    (df['TP_META'] == tp_meta) &
+    (df['SEGMENTO'] == segmento)
+]
+
+subcanais_disponiveis = sorted(df_segmento['NM_SUBCANAL'].dropna().unique())
+subcanal = st.selectbox("📌 Subcanal", subcanais_disponiveis)
+
+df_subcanal = df_segmento[df_segmento['NM_SUBCANAL'] == subcanal]
+tribo_detectada = df_subcanal['NM_TORRE'].dropna().unique()
+tribo = tribo_detectada[0] if len(tribo_detectada) > 0 else "Indefinido"
 
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Tribo", tribo)
@@ -258,190 +191,184 @@ c4.metric("Subcanal", subcanal)
 
 retido_pct = retido_dict.get(tribo, 1.0)
 
-# ====================== PARÂMETROS ======================
+# ======= PARÂMETROS =======
 st.markdown("---")
-st.markdown("<h3 style='color:#555;'>🧮 Parâmetros de Simulação</h3>", unsafe_allow_html=True)
-st.caption("Preencha os valores para simular o impacto das alavancas de autoatendimento.")
-colp, _ = st.columns([2, 1])
-volume_esperado = colp.number_input("📥 Insira o volume de transações", min_value=0, value=10000)
+st.markdown("### ➗ Parâmetros para Simulação")
+colp1, _ = st.columns([2, 1])
+volume_esperado = colp1.number_input("📥 Insira o volume de transações", min_value=0, value=10000)
 
-# ====================== CÁLCULO DO CENÁRIO SELECIONADO ======================
+# ======= CÁLCULO =======
 if st.button("🚀 Calcular Ganhos Potenciais"):
-    df_final = df_sub.copy()
+    df_final = df_subcanal[df_subcanal['SEGMENTO'] == segmento]
 
     if df_final.empty:
         st.warning("❌ Nenhum dado encontrado com os filtros selecionados.")
         st.stop()
 
-    # CR por segmento (da Base de Apoio ou fallback)
-    cr_segmento = cr_por_segmento.get(segmento, np.nan)
-    if pd.isna(cr_segmento):
-        cr_segmento = df_final.get("CR_DIR", pd.Series(dtype=float)).mean(skipna=True)
-        if pd.isna(cr_segmento):
-            cr_segmento = DEFAULTS["CR"].get(segmento, 0.49)
+    # CR Segmento
+    cr_segmento = 0.494699284 if segmento == "Móvel" else 0.498877199 if segmento == "Residencial" else df_final['CR_DIR'].mean()
 
-    # Transações / Acessos (agregado sem mês)
-    df_acc = df_final[df_final["NM_KPI"].str.contains("6 - Acessos", case=False, na=False)]
-    df_trn = df_final[df_final["NM_KPI"].str.contains("7.1 - Transações", case=False, na=False)]
+    # Transações / Acessos
+    df_acessos = df_final[df_final['NM_KPI'].str.contains("6 - Acessos", case=False, na=False)]
+    df_transacoes = df_final[df_final['NM_KPI'].str.contains("7.1 - Transações", case=False, na=False)]
+    vol_acessos = df_acessos['VOL_KPI'].sum()
+    vol_trans = df_transacoes['VOL_KPI'].sum()
+    tx_trans_acessos = vol_trans / vol_acessos if vol_acessos > 0 else 1.75
+    tx_trans_acessos = tx_trans_acessos if tx_trans_acessos > 0 else 1.75
 
-    vol_acessos = df_acc["VOL_KPI"].sum(skipna=True)
-    vol_trans = df_trn["VOL_KPI"].sum(skipna=True)
+    # ======= NOVOS CÁLCULOS =======
+    # Volume de Acessos = Y3 / Y17
+    volume_acessos = volume_esperado / tx_trans_acessos if tx_trans_acessos > 0 else 0.0
 
-    tx_trans_acessos = (vol_trans / vol_acessos) if vol_acessos > 0 else DEFAULTS["TX_FALLBACK"]
-    if tx_trans_acessos <= 0 or np.isinf(tx_trans_acessos) or np.isnan(tx_trans_acessos):
-        tx_trans_acessos = DEFAULTS["TX_FALLBACK"]
+    # MAU CPF = Volume de Acessos / TX_UU_CPF  (se TX_UU_CPF vazio => 12,28)
+    tx_uu_cpf = apoio_params.get("TX_UU_CPF", 12.28)
+    if not isinstance(tx_uu_cpf, (int, float)) or tx_uu_cpf <= 0:
+        tx_uu_cpf = 12.28
+    mau_cpf = volume_acessos / tx_uu_cpf if tx_uu_cpf > 0 else 0.0
 
-    # cálculo principal (volume de CR evitado estimado)
+    # Volume de CR Evitado (sua métrica principal)
     cr_evitado = (volume_esperado / tx_trans_acessos) * cr_segmento * retido_pct
 
-    # ===== RESULTADO DESTACADO =====
+    st.markdown("---")
+    st.markdown("### 📊 Resultados da Simulação")
+    r1, r2, r3, r4 = st.columns(4)
+    r1.metric("Transações / Acessos", f"{tx_trans_acessos:.2f}")
+    r2.metric("CR Segmento (%)", f"{cr_segmento*100:.2f}")
+    r3.metric(f"% Retido ({tribo})", f"{retido_pct*100:.2f}")
+    # novos KPIs auxiliares
+    r4.metric("TX UU CPF (Base Apoio)", f"{tx_uu_cpf:.2f}")
+
+    # Destaque principal
     valor_formatado = f"{cr_evitado:,.0f}".replace(",", ".")
     st.markdown(
         f"""
-        <div style='background-color:#f8f9fa;
-                    border:2px solid #8B0000;
-                    border-radius:12px;
-                    padding:22px;
-                    margin-top:10px;
-                    text-align:center;
-                    color:#8B0000;
-                    font-size:40px;
-                    font-weight:700;
-                    box-shadow:0 4px 10px rgba(0,0,0,0.07);'>
-            ✅ Volume de CR Evitado Estimado<br>
-            <span style='font-size:56px;'>{valor_formatado}</span>
+        <div style="
+            background-color:#fff7e6;
+            border:1px solid #ffd591;
+            padding:20px;
+            border-radius:12px;
+            text-align:center;
+            margin-top:10px;
+            margin-bottom:15px;">
+            <div style="font-size:18px; color:#8B0000; font-weight:600; margin-bottom:6px;">
+                ✅ Volume de CR Evitado Estimado
+            </div>
+            <div style="font-size:42px; color:#262626; font-weight:800;">
+                {valor_formatado}
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    st.markdown("### 📊 Resultados do cenário")
-    m1, m2, m3 = st.columns(3)
-    m1.metric("Transações / Acessos", f"{tx_trans_acessos:.2f}")
-    m2.metric("CR Segmento (%)", f"{cr_segmento*100:.2f}")
-    m3.metric(f"% Retido ({tribo})", f"{retido_pct*100:.2f}")
+    # KPIs auxiliares abaixo
+    a1, a2 = st.columns(2)
+    a1.metric("📊 Volume de Acessos (Y3/Y17)", f"{volume_acessos:,.0f}".replace(",", "."))
+    a2.metric("👤 MAU (CPF) (Acessos/TX_UU_CPF)", f"{mau_cpf:,.0f}".replace(",", "."))
 
-    # ====================== SIMULAÇÃO PARA TODOS OS SUBCANAIS ======================
+    st.caption("Fórmula CR Evitado: Volume Acessos ÷ (Transações / Acessos) × CR Segmento × % Retido")
+
+    # ======= LOTE: TODOS OS SUBCANAIS =======
     st.markdown("---")
-    st.markdown("### 📄 Simulação para Todos os Subcanais (segmento atual)")
+    st.markdown("### 📄 Simulação para Todos os Subcanais")
     resultados_lote = []
-
     for sub in subcanais_disponiveis:
-        df_s = df_seg[df_seg["NM_SUBCANAL"] == sub]
-        tribo_lote = df_s["NM_TORRE"].dropna().unique()
-        tribo_lote = tribo_lote[0] if len(tribo_lote) else "Indefinido"
+        df_sub = df_segmento[df_segmento['NM_SUBCANAL'] == sub]
+        tribo_lote = df_sub['NM_TORRE'].dropna().unique()
+        tribo_lote = tribo_lote[0] if len(tribo_lote) > 0 else "Indefinido"
         ret_lote = retido_dict.get(tribo_lote, 1.0)
+        df_acessos_lote = df_sub[df_sub['NM_KPI'].str.contains("6 - Acessos", case=False, na=False)]
+        df_trans_lote = df_sub[df_sub['NM_KPI'].str.contains("7.1 - Transações", case=False, na=False)]
 
-        acc = df_s[df_s["NM_KPI"].str.contains("6 - Acessos", case=False, na=False)]["VOL_KPI"].sum(skipna=True)
-        trn = df_s[df_s["NM_KPI"].str.contains("7.1 - Transações", case=False, na=False)]["VOL_KPI"].sum(skipna=True)
-        tx = (trn / acc) if acc > 0 else DEFAULTS["TX_FALLBACK"]
-        if tx <= 0 or np.isinf(tx) or np.isnan(tx):
-            tx = DEFAULTS["TX_FALLBACK"]
+        acessos = df_acessos_lote['VOL_KPI'].sum()
+        transacoes = df_trans_lote['VOL_KPI'].sum()
+        tx = transacoes / acessos if acessos > 0 else 1.75
+        tx = tx if tx > 0 else 1.75
+        cr = 0.494699284 if segmento == "Móvel" else 0.498877199 if segmento == "Residencial" else df_sub['CR_DIR'].mean()
+        estimado = (volume_esperado / tx) * cr * ret_lote
 
-        cr_seg = cr_por_segmento.get(segmento, np.nan)
-        if pd.isna(cr_seg):
-            cr_seg = df_s.get("CR_DIR", pd.Series(dtype=float)).mean(skipna=True)
-            if pd.isna(cr_seg):
-                cr_seg = DEFAULTS["CR"].get(segmento, 0.49)
-
-        estimado = (volume_esperado / tx) * cr_seg * ret_lote
+        # também calcula Acessos e MAU por subcanal (usando o mesmo TX_UU_CPF)
+        vol_acessos_sc = volume_esperado / tx if tx > 0 else 0
+        mau_sc = vol_acessos_sc / tx_uu_cpf if tx_uu_cpf > 0 else 0
 
         resultados_lote.append({
             "Subcanal": sub,
             "Tribo": tribo_lote,
             "Transações / Acessos": round(tx, 2),
-            "% Retido": round(ret_lote * 100, 2),
-            "% CR": round(cr_seg * 100, 2),
-            "Volume de CR Evitado": round(estimado),
+            "% Retido": round(ret_lote*100, 2),
+            "% CR": round(cr*100, 2),
+            "Volume de Acessos": round(vol_acessos_sc),
+            "MAU (CPF)": round(mau_sc),
+            "Volume de CR Evitado": round(estimado)
         })
 
     df_lote = pd.DataFrame(resultados_lote)
     st.dataframe(df_lote, use_container_width=True)
 
-    # ====================== PARETO ======================
+    # ======= PARETO =======
     st.markdown("### 🔎 Análise de Pareto - Potencial de Ganho")
     df_pareto = df_lote.sort_values("Volume de CR Evitado", ascending=False).reset_index(drop=True)
-    df_pareto["Acumulado"] = df_pareto["Volume de CR Evitado"].cumsum()
-    total_sum = max(df_pareto["Volume de CR Evitado"].sum(), 1)  # evita div/0
-    df_pareto["Acumulado %"] = 100 * df_pareto["Acumulado"] / total_sum
+    if df_pareto["Volume de CR Evitado"].sum() > 0:
+        df_pareto["Acumulado"] = df_pareto["Volume de CR Evitado"].cumsum()
+        df_pareto["Acumulado %"] = 100 * df_pareto["Acumulado"] / df_pareto["Volume de CR Evitado"].sum()
+    else:
+        df_pareto["Acumulado"] = 0
+        df_pareto["Acumulado %"] = 0
+
     df_pareto["Cor"] = np.where(df_pareto["Acumulado %"] <= 80, "crimson", "lightgray")
 
     fig_pareto = go.Figure()
-    # Barras
-    fig_pareto.add_trace(
-        go.Bar(
-            x=df_pareto["Subcanal"],
-            y=df_pareto["Volume de CR Evitado"],
-            name="Volume de CR Evitado",
-            marker_color=df_pareto["Cor"],
-            hovertemplate="<b>%{x}</b><br>CR evitado: %{y:,}<extra></extra>",
-        )
-    )
-    # Linha acumulada
-    fig_pareto.add_trace(
-        go.Scatter(
-            x=df_pareto["Subcanal"],
-            y=df_pareto["Acumulado %"],
-            name="Acumulado %",
-            mode="lines+markers",
-            marker=dict(color="royalblue"),
-            yaxis="y2",
-            hovertemplate="Acumulado: %{y:.1f}%<extra></extra>",
-        )
-    )
-
+    fig_pareto.add_trace(go.Bar(
+        x=df_pareto["Subcanal"],
+        y=df_pareto["Volume de CR Evitado"],
+        name="Volume de CR Evitado",
+        marker_color=df_pareto["Cor"]
+    ))
+    fig_pareto.add_trace(go.Scatter(
+        x=df_pareto["Subcanal"],
+        y=df_pareto["Acumulado %"],
+        name="Acumulado %",
+        mode="lines+markers",
+        marker=dict(color="royalblue"),
+        yaxis="y2"
+    ))
     fig_pareto.update_layout(
         title="📈 Pareto - Volume de CR Evitado",
-        xaxis=dict(title="Subcanais", tickangle=-25),
-        yaxis=dict(title="CR Evitado", separatethousands=True),
-        yaxis2=dict(title="Acumulado %", overlaying="y", side="right", range=[0, 100], ticksuffix="%"),
-        bargap=0.2,
-        legend=dict(orientation="h", y=-0.25, x=0),
-        margin=dict(t=60, b=120),
+        xaxis=dict(title="Subcanais"),
+        yaxis=dict(title="Volume de CR Evitado"),
+        yaxis2=dict(title="Acumulado %", overlaying="y", side="right", range=[0, 100]),
+        legend=dict(x=0.75, y=1.15, orientation="h"),
+        bargap=0.2
     )
     st.plotly_chart(fig_pareto, use_container_width=True)
 
-    # ====================== TABELA TOP 80% ======================
+    # ======= TOP 80% =======
     df_top80 = df_pareto[df_pareto["Acumulado %"] <= 80].copy()
     st.markdown("### 🏆 Subcanais Prioritários (Top 80%)")
-    st.dataframe(
-        df_top80[["Subcanal", "Tribo", "Volume de CR Evitado", "Acumulado %"]],
-        use_container_width=True,
-    )
+    st.dataframe(df_top80[["Subcanal", "Tribo", "Volume de Acessos", "MAU (CPF)", "Volume de CR Evitado", "Acumulado %"]],
+                 use_container_width=True)
 
-    # ====================== INSIGHT AUTOMÁTICO ======================
+    # ======= INSIGHT =======
     total_ev = df_lote["Volume de CR Evitado"].sum()
-    total_ev_fmt = f"{total_ev:,.0f}".replace(",", ".")
     top80_names = ", ".join(df_top80["Subcanal"].tolist())
-
-    st.markdown(
-        f"""
-        > 🧠 **Insight Automático**  
-        > • O volume total estimado de **CR evitado** é **{total_ev_fmt}**.  
-        > • Apenas **{len(df_top80)} subcanais** concentram **80%** do potencial de ganho.  
-        > • Subcanais prioritários: **{top80_names}**.  
-        > • Priorize esses subcanais para maximizar o impacto.
-        """
+    total_ev_fmt = f"{total_ev:,.0f}".replace(",", ".")
+    insight_text = (
+        f"🧠 **Insight Automático**\n\n"
+        f"- O volume total estimado de **CR evitado** é **{total_ev_fmt}**.\n\n"
+        f"- Apenas **{len(df_top80)} subcanais** concentram **80%** do potencial de ganho.\n\n"
+        f"- Subcanais prioritários: **{top80_names}**.\n\n"
+        f"👉 Recomenda-se priorizar estes subcanais para maximizar o impacto."
     )
+    st.markdown(insight_text)
 
-    # ====================== DOWNLOAD (EXCEL ou CSV) ======================
-    try:
-        import xlsxwriter  # noqa: F401
-        buffer = io.BytesIO()
-        with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
-            df_lote.to_excel(writer, sheet_name="Resultados", index=False)
-            df_top80.to_excel(writer, sheet_name="Top_80_Pareto", index=False)
-        st.download_button(
-            label="📥 Baixar Excel Completo",
-            data=buffer.getvalue(),
-            file_name="simulacao_cr.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        )
-    except Exception:
-        csv_all = df_lote.to_csv(index=False).encode("utf-8")
-        st.download_button(
-            label="📥 Baixar Resultados (CSV)",
-            data=csv_all,
-            file_name="simulacao_cr.csv",
-            mime="text/csv",
-        )
+    # ======= DOWNLOAD EXCEL (2 abas) =======
+    buffer = io.BytesIO()
+    with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
+        df_lote.to_excel(writer, sheet_name="Resultados", index=False)
+        df_top80.to_excel(writer, sheet_name="Top_80_Pareto", index=False)
+    st.download_button(
+        label="📥 Baixar Excel Completo",
+        data=buffer.getvalue(),
+        file_name="simulacao_cr.xlsx",
+        mime="application/vnd.ms-excel"
+    )
