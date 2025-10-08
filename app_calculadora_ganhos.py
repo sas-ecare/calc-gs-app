@@ -84,47 +84,62 @@ def carregar_dados(_uploaded_file_bytes: bytes | None):
     else:
         df_perf["CR_DIR"] = np.nan
 
-    # -------- BASE APOIO --------
-    df_apoio_raw = pd.read_excel(xls, sheet_name="BASE APOIO", header=None)
-    table = df_apoio_raw.fillna("")
+    # -------- BASE DE APOIO (busca automática) --------
+    apoio_sheet = None
+    for s in xls.sheet_names:
+        if "apoio" in s.lower():
+            apoio_sheet = s
+            break
+
+    if apoio_sheet:
+        df_apoio_raw = pd.read_excel(xls, sheet_name=apoio_sheet, header=None)
+    else:
+        st.warning("⚠️ Nenhuma aba de apoio encontrada no arquivo (ex: 'Base de Apoio'). Usando valores padrão.")
+        df_apoio_raw = pd.DataFrame()
+
+    table = df_apoio_raw.fillna("") if not df_apoio_raw.empty else pd.DataFrame()
     apoio = {
         "CR": {"Móvel": 0.4947, "Residencial": 0.4989},
         "RETIDO": {"App": 0.9169, "Bot": 0.8835, "Web": 0.9027},
         "TX_UU_CPF": 0.1228
     }
 
-    for r in range(table.shape[0]):
-        row = [str(x).strip() for x in table.iloc[r].tolist()]
-        if any("cr" == v.lower() for v in row):
-            for rr in range(r+1, min(r+10, table.shape[0])):
-                a = str(table.iloc[rr, 0]).strip().lower()
-                val = str(table.iloc[rr, 1]).strip()
-                try:
-                    num = float(val.replace("%", "").replace(",", "."))
-                    if "mó" in a or "mov" in a:
-                        apoio["CR"]["Móvel"] = num/100 if num > 1 else num
-                    if "res" in a:
-                        apoio["CR"]["Residencial"] = num/100 if num > 1 else num
-                except:
-                    pass
-        if any("retido" in v.lower() for v in row):
-            for rr in range(r+1, min(r+10, table.shape[0])):
-                canal = str(table.iloc[rr, 0]).strip().capitalize()
-                val = str(table.iloc[rr, 1]).strip()
-                if canal in ["App", "Bot", "Web"]:
+    # tentativa de leitura real dos valores
+    try:
+        for r in range(table.shape[0]):
+            row = [str(x).strip() for x in table.iloc[r].tolist()]
+            if any("cr" == v.lower() for v in row):
+                for rr in range(r+1, min(r+10, table.shape[0])):
+                    a = str(table.iloc[rr, 0]).strip().lower()
+                    val = str(table.iloc[rr, 1]).strip()
                     try:
                         num = float(val.replace("%", "").replace(",", "."))
-                        apoio["RETIDO"][canal] = num/100 if num > 1 else num
+                        if "mó" in a or "mov" in a:
+                            apoio["CR"]["Móvel"] = num/100 if num > 1 else num
+                        if "res" in a:
+                            apoio["CR"]["Residencial"] = num/100 if num > 1 else num
                     except:
                         pass
-        if any("tx uu cpf" in v.lower() for v in row):
-            for c in range(table.shape[1]):
-                try:
-                    num = float(str(table.iloc[r, c]).replace("%", "").replace(",", "."))
-                    if 0 < num <= 100:
-                        apoio["TX_UU_CPF"] = num/100 if num > 1 else num
-                except:
-                    pass
+            if any("retido" in v.lower() for v in row):
+                for rr in range(r+1, min(r+10, table.shape[0])):
+                    canal = str(table.iloc[rr, 0]).strip().capitalize()
+                    val = str(table.iloc[rr, 1]).strip()
+                    if canal in ["App", "Bot", "Web"]:
+                        try:
+                            num = float(val.replace("%", "").replace(",", "."))
+                            apoio["RETIDO"][canal] = num/100 if num > 1 else num
+                        except:
+                            pass
+            if any("tx uu cpf" in v.lower() for v in row):
+                for c in range(table.shape[1]):
+                    try:
+                        num = float(str(table.iloc[r, c]).replace("%", "").replace(",", "."))
+                        if 0 < num <= 100:
+                            apoio["TX_UU_CPF"] = num/100 if num > 1 else num
+                    except:
+                        pass
+    except Exception as e:
+        st.warning(f"⚠️ Erro ao processar Base de Apoio: {e}")
 
     return df_perf, apoio
 
@@ -205,6 +220,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     c5.metric("📊 Volume de Acessos", f"{acessos_estimados:,.0f}".replace(",", "."))
     c6.metric("👤 MAU (CPF)", f"{mau_cpf:,.0f}".replace(",", "."))
 
+    # ====================== SIMULAÇÃO EM LOTE ======================
     st.markdown("---")
     st.markdown("### 📄 Simulação para Todos os Subcanais")
     resultados = []
@@ -225,7 +241,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     df_lote = pd.DataFrame(resultados)
     st.dataframe(df_lote, use_container_width=True)
 
-    # --- Pareto ---
+    # 📉 Gráfico Pareto
     st.markdown("### 🔎 Análise de Pareto - Potencial de Ganho")
     df_pareto = df_lote.sort_values("Volume de CR Evitado", ascending=False).reset_index(drop=True)
     df_pareto["Acumulado"] = df_pareto["Volume de CR Evitado"].cumsum()
@@ -244,18 +260,21 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
                       legend=dict(x=0.75, y=1.15, orientation="h"), bargap=0.2)
     st.plotly_chart(fig, use_container_width=True)
 
+    # 📊 Tabela executiva Top 80%
     df_top80 = df_pareto[df_pareto["Acumulado %"] <= 80].copy()
     st.markdown("### 🏆 Subcanais Prioritários (Top 80%)")
     st.dataframe(df_top80[["Subcanal","Tribo","Volume de CR Evitado","Acumulado %"]], use_container_width=True)
 
+    # 🧠 Insight automático
     total_ev = df_lote["Volume de CR Evitado"].sum()
     top80_names = ", ".join(df_top80["Subcanal"].tolist())
-    st.info(f"🧠 Insight Automático\n\n"
-            f"O volume total estimado de **CR evitado** é **{f'{total_ev:,.0f}'.replace(',', '.')}**.\n\n"
-            f"Apenas **{len(df_top80)} subcanais** concentram 80% do potencial de ganho:\n\n"
-            f"**{top80_names}**.\n\n👉 Priorize esses subcanais para maximizar impacto.")
+    st.info(f"🧠 **Insight Automático**\n\n"
+            f"- O volume total estimado de **CR evitado** é **{f'{total_ev:,.0f}'.replace(',', '.')}**.\n\n"
+            f"- Apenas **{len(df_top80)} subcanais** concentram **80%** do potencial de ganho.\n\n"
+            f"- Subcanais prioritários: **{top80_names}**.\n\n"
+            f"👉 Recomenda-se priorizar estes subcanais para maximizar o impacto.")
 
-    # --- Download Excel ---
+    # 📥 Download Excel
     buffer = io.BytesIO()
     with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
         df_lote.to_excel(writer, sheet_name="Resultados", index=False)
