@@ -129,13 +129,10 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     # Volume de acessos
     volume_acessos = volume_esperado / tx_trans_acessos if tx_trans_acessos > 0 else 0
 
-    # MAU (CPF) = SE(Y17="";"";Y13/SE(L5=0;12,28;L5))
-    if tx_trans_acessos == 0:
-        mau_cpf = 0
-    else:
-        if tx_uu_cpf in [0, None, np.nan]:
-            tx_uu_cpf = 12.28
-        mau_cpf = volume_acessos / tx_uu_cpf
+    # MAU (CPF)
+    if tx_uu_cpf in [0, None, np.nan]:
+        tx_uu_cpf = 12.28
+    mau_cpf = volume_acessos / tx_uu_cpf
 
     # CR evitado
     cr_evitado = (volume_esperado / tx_trans_acessos) * cr_segmento * retido_pct
@@ -150,7 +147,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     r3.metric(f"% Retido ({tribo})", f"{retido_pct*100:.2f}")
     r4.metric("TX UU CPF", f"{tx_uu_cpf:.2f}")
 
-    valor_formatado = f"{cr_evitado:,.0f}".replace(",", ".")
+    valor_formatado = f"{np.floor(cr_evitado + 0.5):,.0f}".replace(",", ".")
     st.markdown(
         f"""
         <div style="
@@ -174,8 +171,8 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
 
     # KPIs auxiliares
     a1, a2 = st.columns(2)
-    a1.metric("📊 Volume de Acessos", f"{volume_acessos:,.0f}".replace(",", "."))
-    a2.metric("👤 MAU (CPF)", f"{mau_cpf:,.0f}".replace(",", "."))
+    a1.metric("📊 Volume de Acessos", f"{np.floor(volume_acessos + 0.5):,.0f}".replace(",", "."))
+    a2.metric("👤 MAU (CPF)", f"{np.floor(mau_cpf + 0.5):,.0f}".replace(",", "."))
 
     # ====================== PARETO ======================
     st.markdown("---")
@@ -194,12 +191,12 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         resultados_lote.append({
             "Subcanal": sub,
             "Tribo": tribo_lote,
-            "Transações / Acessos": round(tx_trans_acessos, 2),
+            "Transações / Acessos": np.floor(tx_trans_acessos + 0.5),
             "% Retido": round(ret_lote*100, 2),
             "% CR": round(cr*100, 2),
-            "Volume de Acessos": round(vol_acessos_sc),
-            "MAU (CPF)": round(mau_sc),
-            "Volume de CR Evitado": round(estimado)
+            "Volume de Acessos": np.floor(vol_acessos_sc + 0.5),
+            "MAU (CPF)": np.floor(mau_sc + 0.5),
+            "Volume de CR Evitado": np.floor(estimado + 0.5)
         })
 
     df_lote = pd.DataFrame(resultados_lote)
@@ -245,7 +242,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     # ====================== INSIGHT ======================
     total_ev = df_lote["Volume de CR Evitado"].sum()
     top80_names = ", ".join(df_top80["Subcanal"].tolist())
-    total_ev_fmt = f"{total_ev:,.0f}".replace(",", ".")
+    total_ev_fmt = f"{np.floor(total_ev + 0.5):,.0f}".replace(",", ".")
     insight_text = (
         f"🧠 **Insight Automático**\n\n"
         f"- O volume total estimado de **CR evitado** é **{total_ev_fmt}**.\n\n"
