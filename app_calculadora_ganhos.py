@@ -124,13 +124,14 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     retido_pct = retido_dict.get(tribo, 1.0)
     cr_segmento = cr_dict.get(segmento, 0.49)
     tx_trans_acessos = tx_trans_dict.get('Padrão', 1.75)
+    tx_trans_acessos = 1.0 if tx_trans_acessos < 1 else tx_trans_acessos  # 🔹 nova regra mínima = 1
     tx_uu_cpf = tx_uu_cpf_dict.get('Padrão', 7.02)
 
     # Volume de acessos
     volume_acessos = volume_esperado / tx_trans_acessos if tx_trans_acessos > 0 else 0
 
     # MAU (CPF)
-    if tx_uu_cpf in [0, None, np.nan]:
+    if not tx_uu_cpf or tx_uu_cpf == 0:
         tx_uu_cpf = 12.28
     mau_cpf = volume_acessos / tx_uu_cpf
 
@@ -138,45 +139,60 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     cr_evitado = (volume_esperado / tx_trans_acessos) * cr_segmento * retido_pct
 
     # ====================== RESULTADOS ======================
-    st.markdown("---")
-    st.markdown("### 📊 Resultados da Simulação")
+    col_main, col_side = st.columns([3, 1])
 
-    r1, r2, r3, r4 = st.columns(4)
-    r1.metric("Transações / Acessos", f"{tx_trans_acessos:.2f}")
-    r2.metric("CR Segmento (%)", f"{cr_segmento*100:.2f}")
-    r3.metric(f"% Retido ({tribo})", f"{retido_pct*100:.2f}")
-    r4.metric("TX UU CPF", f"{tx_uu_cpf:.2f}")
+    with col_main:
+        st.markdown("### 📊 Resultados da Simulação")
 
-    valor_formatado = f"{np.floor(cr_evitado + 0.5):,.0f}".replace(",", ".")
-    st.markdown(
-        f"""
-        <div style="
-            background-color:#fff7e6;
-            border:1px solid #ffd591;
-            padding:20px;
-            border-radius:12px;
-            text-align:center;
-            margin-top:10px;
-            margin-bottom:15px;">
-            <div style="font-size:18px; color:#8B0000; font-weight:600; margin-bottom:6px;">
-                ✅ Volume de CR Evitado Estimado
+        valor_formatado = f"{np.floor(cr_evitado + 0.5):,.0f}".replace(",", ".")
+        st.markdown(
+            f"""
+            <div style="
+                background-color:#fff7e6;
+                border:1px solid #ffd591;
+                padding:20px;
+                border-radius:12px;
+                text-align:center;
+                margin-top:10px;
+                margin-bottom:15px;">
+                <div style="font-size:18px; color:#8B0000; font-weight:600; margin-bottom:6px;">
+                    ✅ Volume de CR Evitado Estimado
+                </div>
+                <div style="font-size:42px; color:#262626; font-weight:800;">
+                    {valor_formatado}
+                </div>
             </div>
-            <div style="font-size:42px; color:#262626; font-weight:800;">
-                {valor_formatado}
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+            """,
+            unsafe_allow_html=True,
+        )
 
-    # KPIs auxiliares
-    a1, a2 = st.columns(2)
-    a1.metric("📊 Volume de Acessos", f"{np.floor(volume_acessos + 0.5):,.0f}".replace(",", "."))
-    a2.metric("👤 MAU (CPF)", f"{np.floor(mau_cpf + 0.5):,.0f}".replace(",", "."))
+        a1, a2 = st.columns(2)
+        a1.metric("📊 Volume de Acessos", f"{np.floor(volume_acessos + 0.5):,.0f}".replace(",", "."))
+        a2.metric("👤 MAU (CPF)", f"{np.floor(mau_cpf + 0.5):,.0f}".replace(",", "."))
+
+    # ====================== CAIXA DE PREMISSAS ======================
+    with col_side:
+        st.markdown("### 📋 Premissas Utilizadas")
+        st.markdown(
+            f"""
+            <div style="background-color:#f8f9fa; padding:15px; border-radius:10px; border:1px solid #ddd;">
+                <p style="font-weight:bold; color:#8B0000;">📈 Taxa de Transação x Acesso:</p>
+                <p style="margin-top:-10px;">{tx_trans_acessos:.2f}</p>
+                <p style="font-weight:bold; color:#8B0000;">💬 CR Segmento (%):</p>
+                <p style="margin-top:-10px;">{cr_segmento*100:.2f}</p>
+                <p style="font-weight:bold; color:#8B0000;">📊 % Retido ({tribo}):</p>
+                <p style="margin-top:-10px;">{retido_pct*100:.2f}</p>
+                <p style="font-weight:bold; color:#8B0000;">👤 TX UU CPF:</p>
+                <p style="margin-top:-10px;">{tx_uu_cpf:.2f}</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
     # ====================== PARETO ======================
     st.markdown("---")
     st.markdown("### 📄 Simulação para Todos os Subcanais")
+
     resultados_lote = []
     for sub in subcanais_disponiveis:
         df_sub = df[(df['SEGMENTO'] == segmento) & (df['NM_SUBCANAL'] == sub)]
@@ -202,7 +218,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     df_lote = pd.DataFrame(resultados_lote)
     st.dataframe(df_lote, use_container_width=True)
 
-    # ====================== PARETO ======================
+    # 📉 Pareto
     st.markdown("### 🔎 Análise de Pareto - Potencial de Ganho")
     df_pareto = df_lote.sort_values("Volume de CR Evitado", ascending=False).reset_index(drop=True)
     df_pareto["Acumulado"] = df_pareto["Volume de CR Evitado"].cumsum()
@@ -210,20 +226,8 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     df_pareto["Cor"] = np.where(df_pareto["Acumulado %"] <= 80, "crimson", "lightgray")
 
     fig = go.Figure()
-    fig.add_trace(go.Bar(
-        x=df_pareto["Subcanal"],
-        y=df_pareto["Volume de CR Evitado"],
-        name="Volume de CR Evitado",
-        marker_color=df_pareto["Cor"]
-    ))
-    fig.add_trace(go.Scatter(
-        x=df_pareto["Subcanal"],
-        y=df_pareto["Acumulado %"],
-        name="Acumulado %",
-        mode="lines+markers",
-        marker=dict(color="royalblue"),
-        yaxis="y2"
-    ))
+    fig.add_trace(go.Bar(x=df_pareto["Subcanal"], y=df_pareto["Volume de CR Evitado"], name="Volume de CR Evitado", marker_color=df_pareto["Cor"]))
+    fig.add_trace(go.Scatter(x=df_pareto["Subcanal"], y=df_pareto["Acumulado %"], name="Acumulado %", mode="lines+markers", marker=dict(color="royalblue"), yaxis="y2"))
     fig.update_layout(
         title="📈 Pareto - Volume de CR Evitado",
         xaxis=dict(title="Subcanais"),
@@ -234,12 +238,12 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     )
     st.plotly_chart(fig, use_container_width=True)
 
+    # 🏆 Top 80%
     df_top80 = df_pareto[df_pareto["Acumulado %"] <= 80].copy()
     st.markdown("### 🏆 Subcanais Prioritários (Top 80%)")
-    st.dataframe(df_top80[["Subcanal", "Tribo", "Volume de Acessos", "MAU (CPF)", "Volume de CR Evitado", "Acumulado %"]],
-                 use_container_width=True)
+    st.dataframe(df_top80[["Subcanal", "Tribo", "Volume de Acessos", "MAU (CPF)", "Volume de CR Evitado", "Acumulado %"]], use_container_width=True)
 
-    # ====================== INSIGHT ======================
+    # 🧠 Insight
     total_ev = df_lote["Volume de CR Evitado"].sum()
     top80_names = ", ".join(df_top80["Subcanal"].tolist())
     total_ev_fmt = f"{np.floor(total_ev + 0.5):,.0f}".replace(",", ".")
@@ -252,14 +256,9 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     )
     st.markdown(insight_text)
 
-    # ====================== DOWNLOAD ======================
+    # 📥 Download
     buffer = io.BytesIO()
     with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
         df_lote.to_excel(writer, sheet_name="Resultados", index=False)
         df_top80.to_excel(writer, sheet_name="Top_80_Pareto", index=False)
-    st.download_button(
-        label="📥 Baixar Excel Completo",
-        data=buffer.getvalue(),
-        file_name="simulacao_cr.xlsx",
-        mime="application/vnd.ms-excel"
-    )
+    st.download_button(label="📥 Baixar Excel Completo", data=buffer.getvalue(), file_name="simulacao_cr.xlsx", mime="application/vnd.ms-excel")
