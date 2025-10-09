@@ -220,7 +220,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     st.markdown(
         f"""
         <div style="
-            max-width:720px;margin:18px auto 6px;padding:18px 22px;
+            max-width:450px;
             background:linear-gradient(90deg,#b31313 0%, #d01f1f 55%, #e23a3a 100%);
             border-radius:18px; box-shadow:0 8px 18px rgba(139,0,0,.25); color:#fff">
           <div style="display:flex;justify-content:space-between;align-items:center">
@@ -276,7 +276,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         })
 
     df_lote = pd.DataFrame(resultados)
-    st.dataframe(df_lote, use_container_width=True)
+    st.dataframe(df_lote, use_container_width=Falso)
 
     # =================== PARETO ===================
     st.markdown("### 🔎 Análise de Pareto - Potencial de Ganho")
@@ -319,7 +319,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     df_top80 = df_pareto[df_pareto["Acumulado %"] <= 80].copy()
     st.markdown("### 🏆 Subcanais Prioritários (Top 80%)")
     st.dataframe(df_top80[["Subcanal", "Tribo", "Volume de CR Evitado", "Acumulado %"]],
-                 use_container_width=True)
+                 use_container_width=False)
 
     total_ev = int(df_lote["Volume de CR Evitado"].sum())
     top80_names = ", ".join(df_top80["Subcanal"].tolist())
@@ -352,3 +352,4 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
