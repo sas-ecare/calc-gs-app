@@ -291,6 +291,22 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         vol_acessos_sc = volume_esperado / tx if tx > 0 else 0
         mau_sc = vol_acessos_sc / tx_uu_cpf if tx_uu_cpf > 0 else 0
 
+        # MAU CPF = SE(Y17="";"";Y13/SE('Base de Apoio'!L5=0;12,28;'Base de Apoio'!L5))
+        if tx_trans_acessos == 0:
+            mau_cpf = 0
+        else:
+            tx_uu_cpf = apoio_params.get("TX_UU_CPF", 12.28)
+            try:
+                tx_uu_cpf = float(tx_uu_cpf)
+            except Exception:
+                tx_uu_cpf = 12.28
+            if tx_uu_cpf == 0:
+                tx_uu_cpf = 12.28
+            mau_cpf = volume_acessos / tx_uu_cpf
+
+
+
+
         resultados_lote.append({
             "Subcanal": sub,
             "Tribo": tribo_lote,
@@ -372,3 +388,4 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
