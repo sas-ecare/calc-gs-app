@@ -78,20 +78,15 @@ else:
     )
 
 # ====================== PARAMETROS FIXOS ======================
-# Retido por tribo. Para "Dma", usar CR do segmento (regra abaixo).
 RETIDO_DICT = {
     "App": 0.916893598,
     "Bot": 0.883475537,
     "Web": 0.902710768,
 }
-
-# CR por segmento
 CR_SEGMENTO = {
-    "Móvel": 0.4947,        # 49,47%
-    "Residencial": 0.4989,  # 49,89%
+    "Móvel": 0.4947,
+    "Residencial": 0.4989,
 }
-
-# TX_UU_CPF por segmento (se ausente usa DEFAULT_TX_UU_CPF)
 TX_UU_CPF_SEG = {
     "Móvel": 7.02,
     "Residencial": 12.28,
@@ -106,20 +101,13 @@ URL_PERFORMANCE_RAW = (
 @st.cache_data(show_spinner=True)
 def carregar_dados():
     df = pd.read_excel(URL_PERFORMANCE_RAW, sheet_name="Tabela Performance")
-    # Normalizações
     if "ANOMES" in df.columns:
         df["ANOMES"] = pd.to_datetime(df["ANOMES"].astype(str), format="%Y%m", errors="coerce")
     for c in ["VOL_KPI", "CR_DIR"]:
         if c in df.columns:
             df[c] = pd.to_numeric(df[c], errors="coerce")
-    # manter só "Real"
     if "TP_META" in df.columns:
         df = df[df["TP_META"].astype(str).str.strip().str.lower() == "real"].copy()
-    # Colunas padrão esperadas
-    for c in ["SEGMENTO", "NM_SUBCANAL", "NM_TORRE", "NM_KPI"]:
-        if c not in df.columns:
-            st.error(f"Coluna ausente na base: {c}")
-            st.stop()
     return df
 
 df = carregar_dados()
@@ -155,7 +143,7 @@ with st.expander("⚙️ Premissas utilizadas (fixas)", expanded=False):
 - **CR por segmento**: Móvel = {CR_SEGMENTO['Móvel']*100:.2f}%, Residencial = {CR_SEGMENTO['Residencial']*100:.2f}%  
 - **% Retido 72h**: App = {RETIDO_DICT['App']*100:.2f}%, Bot = {RETIDO_DICT['Bot']*100:.2f}%, Web = {RETIDO_DICT['Web']*100:.2f}%  
 - **TX UU / CPF**: Móvel = {TX_UU_CPF_SEG['Móvel']:.2f}, Residencial = {TX_UU_CPF_SEG['Residencial']:.2f} (padrão {DEFAULT_TX_UU_CPF:.2f} se ausente)  
-- **Regra Retido (Dma)**: quando **Tribo = Dma**, o **% Retido = CR do Segmento** (nunca 100%).
+- **Regra Retido (Dma)**: quando **Tribo = Dma**, o **% Retido = Bot (88,35%)**.
 - **Transações/Acessos mínimo**: valores < **1,00** são forçados para **1,00**.
         """
     )
@@ -179,31 +167,24 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         st.warning("❌ Nenhum dado encontrado com os filtros selecionados.")
         st.stop()
 
-    # CR do segmento
     cr_segmento = CR_SEGMENTO.get(segmento, 0.50)
-
-    # tx transações/acessos do subcanal (agregado em toda a base Real)
     df_acc = df_final[df_final["NM_KPI"].str.contains("6 - Acessos", case=False, na=False)]
     df_trn = df_final[df_final["NM_KPI"].str.contains("7.1 - Transações", case=False, na=False)]
     vol_acc = df_acc["VOL_KPI"].sum()
     vol_trn = df_trn["VOL_KPI"].sum()
     tx_trn_acc = (vol_trn / vol_acc) if vol_acc > 0 else 1.0
-    if tx_trn_acc < 1.0:
-        tx_trn_acc = 1.0  # força mínimo de 1,00
+    tx_trn_acc = max(tx_trn_acc, 1.0)
 
-    # Retido base (regra Dma usa CR do segmento)
-    retido_base = RETIDO_DICT.get(tribo, cr_segmento)
+    # >>> regra Dma = Bot
+    retido_base = RETIDO_DICT.get(tribo, RETIDO_DICT["Web"])
     if str(tribo).strip().lower() == "dma":
-        retido_base = cr_segmento
+        retido_base = RETIDO_DICT["Bot"]
 
-    # Volume de acessos e MAU (CPF)
     volume_acessos = volume_trans / tx_trn_acc
     tx_uu_cpf = TX_UU_CPF_SEG.get(segmento, DEFAULT_TX_UU_CPF)
-    mau_cpf = volume_acessos / (tx_uu_cpf if tx_uu_cpf > 0 else DEFAULT_TX_UU_CPF)
-
-    # CR evitado
+    mau_cpf = volume_acessos / tx_uu_cpf
     cr_evitado = volume_acessos * cr_segmento * retido_base
-    cr_evitado_floor = np.floor(cr_evitado + 1e-9)  # evita arredondar p/ cima por flutuante
+    cr_evitado_floor = np.floor(cr_evitado + 1e-9)
 
     # =================== RESULTADOS (cards) ===================
     st.markdown("---")
@@ -215,7 +196,6 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     m3.metric("% Retido (regra)", f"{retido_base*100:.2f}%")
     m4.metric("MAU (CPF)", fmt_int(mau_cpf))
 
-    # KPI premium – gradiente mais discreto
     valor_destacado = fmt_int(cr_evitado_floor)
     st.markdown(
         f"""
@@ -234,9 +214,9 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         """,
         unsafe_allow_html=True,
     )
-    st.caption("Fórmula: Volume de Acessos × CR Segmento × % Retido • onde Volume de Acessos = Volume de Transações ÷ (Transações/Acessos).")
+    st.caption("Fórmula: Volume de Acessos × CR Segmento × % Retido")
 
-    # =================== LOTE (todos os subcanais do SEGMENTO) ===================
+    # =================== LOTE (todos os subcanais) ===================
     st.markdown("---")
     st.markdown("### 📄 Simulação para Todos os Subcanais")
 
@@ -251,17 +231,16 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         va = df_a["VOL_KPI"].sum()
         vt = df_t["VOL_KPI"].sum()
         tx = (vt / va) if va > 0 else 1.0
-        if tx < 1.0:
-            tx = 1.0
+        tx = max(tx, 1.0)
 
         cr_seg = CR_SEGMENTO.get(segmento, 0.50)
-        ret_b = RETIDO_DICT.get(tribo_i, cr_seg)
+        ret_b = RETIDO_DICT.get(tribo_i, RETIDO_DICT["Web"])
         if str(tribo_i).strip().lower() == "dma":
-            ret_b = cr_seg
+            ret_b = RETIDO_DICT["Bot"]
 
         vol_acc_i = volume_trans / tx
         tx_uu_i = TX_UU_CPF_SEG.get(segmento, DEFAULT_TX_UU_CPF)
-        mau_i = vol_acc_i / (tx_uu_i if tx_uu_i > 0 else DEFAULT_TX_UU_CPF)
+        mau_i = vol_acc_i / tx_uu_i
         estimado = np.floor((vol_acc_i * cr_seg * ret_b) + 1e-9)
 
         resultados.append({
@@ -281,12 +260,8 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     # =================== PARETO ===================
     st.markdown("### 🔎 Análise de Pareto - Potencial de Ganho")
     df_pareto = df_lote.sort_values("Volume de CR Evitado", ascending=False).reset_index(drop=True)
-    if df_pareto["Volume de CR Evitado"].sum() > 0:
-        df_pareto["Acumulado"] = df_pareto["Volume de CR Evitado"].cumsum()
-        df_pareto["Acumulado %"] = 100 * df_pareto["Acumulado"] / df_pareto["Volume de CR Evitado"].sum()
-    else:
-        df_pareto["Acumulado"] = 0
-        df_pareto["Acumulado %"] = 0.0
+    df_pareto["Acumulado"] = df_pareto["Volume de CR Evitado"].cumsum()
+    df_pareto["Acumulado %"] = 100 * df_pareto["Acumulado"] / df_pareto["Volume de CR Evitado"].sum()
     df_pareto["Cor"] = np.where(df_pareto["Acumulado %"] <= 80, "crimson", "lightgray")
 
     fig_p = go.Figure()
@@ -311,40 +286,30 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         yaxis2=dict(title="Acumulado %", overlaying="y", side="right", range=[0, 100]),
         legend=dict(x=0.72, y=1.18, orientation="h"),
         bargap=0.2,
-        margin=dict(l=10, r=10, t=60, b=80)
     )
     st.plotly_chart(fig_p, use_container_width=False)
 
     # =================== TOP 80% & INSIGHT ===================
-    df_top80 = df_pareto[df_pareto["Acumulado %"] <= 80].copy()
-    st.markdown("### 🏆 Subcanais Prioritários (Top 80%)")
-    st.dataframe(df_top80[["Subcanal", "Tribo", "Volume de CR Evitado", "Acumulado %"]],
-                 use_container_width=False)
-
+    df_top80 = df_pareto[df_pareto["Acumulado %"] <= 80]
     total_ev = int(df_lote["Volume de CR Evitado"].sum())
-    top80_names = ", ".join(df_top80["Subcanal"].tolist())
     total_ev_fmt = fmt_int(total_ev)
+    top80_names = ", ".join(df_top80["Subcanal"].tolist())
+
     st.markdown(
         f"""
 **🧠 Insight Automático**
 
-# == Volume total estimado de **CR evitado**: **{total_ev_fmt}**.  
+- Volume total estimado de **CR evitado**: **{total_ev_fmt}**.  
 - **{len(df_top80)} subcanais** concentram **80%** do potencial: **{top80_names}**.  
 - **Ação**: priorize esses subcanais para maximizar impacto.
         """
     )
 
-    # =================== DOWNLOAD EXCEL ===================
+    # =================== DOWNLOAD ===================
     buffer = io.BytesIO()
-    engine = "xlsxwriter"
-    try:
-        import xlsxwriter  # noqa: F401
-    except Exception:
-        engine = "openpyxl"
-
-    with pd.ExcelWriter(buffer, engine=engine) as writer:
-        df_lote.to_excel(writer, sheet_name="Resultados", index=False)
-        df_top80.to_excel(writer, sheet_name="Top_80_Pareto", index=False)
+    with pd.ExcelWriter(buffer, engine="xlsxwriter") as w:
+        df_lote.to_excel(w, sheet_name="Resultados", index=False)
+        df_top80.to_excel(w, sheet_name="Top_80_Pareto", index=False)
 
     st.download_button(
         label="📥 Baixar Excel Completo",
@@ -352,4 +317,3 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
-
