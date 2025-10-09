@@ -241,7 +241,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     # 🏆 Top 80%
     df_top80 = df_pareto[df_pareto["Acumulado %"] <= 80].copy()
     st.markdown("### 🏆 Subcanais Prioritários (Top 80%)")
-    st.dataframe(df_top80[["Subcanal", "Tribo", "Volume de Acessos", "MAU (CPF)", "Volume de CR Evitado", "Acumulado %"]], use_container_width=True)
+    st.dataframe(df_top80[["Subcanal", "Tribo", "Volume de Acessos", "MAU (CPF)", "Volume de CR Evitado", "Acumulado %"]], use_container_width=False)
 
     # 🧠 Insight
     total_ev = df_lote["Volume de CR Evitado"].sum()
@@ -250,7 +250,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     insight_text = (
         f"🧠 **Insight Automático**\n\n"
         f"- O volume total estimado de **CR evitado** é **{total_ev_fmt}**.\n\n"
-        f"- Apenas **{len(df_top80)} subcanais** concentram **80%** do potencial de ganho.\n\n"
+        f"- **{len(df_top80)} subcanais** concentram **80%** do potencial de ganho.\n\n"
         f"- Subcanais prioritários: **{top80_names}**.\n\n"
         f"👉 Recomenda-se priorizar estes subcanais para maximizar o impacto."
     )
@@ -262,3 +262,4 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         df_lote.to_excel(writer, sheet_name="Resultados", index=False)
         df_top80.to_excel(writer, sheet_name="Top_80_Pareto", index=False)
     st.download_button(label="📥 Baixar Excel Completo", data=buffer.getvalue(), file_name="simulacao_cr.xlsx", mime="application/vnd.ms-excel")
+
