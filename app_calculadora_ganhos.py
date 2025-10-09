@@ -220,7 +220,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     st.markdown(
         f"""
         <div style="
-            max-width:450px;margin:18px auto 6px;padding:18px 22px;
+            max-width:450px;margin:18px;padding:18px 22px;
             background:linear-gradient(90deg,#b31313 0%, #d01f1f 55%, #e23a3a 100%);
             border-radius:18px; box-shadow:0 8px 18px rgba(139,0,0,.25); color:#fff">
           <div style="display:flex;justify-content:space-between;align-items:center">
@@ -328,7 +328,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         f"""
 **🧠 Insight Automático**
 
-- Volume total estimado de **CR evitado**: **{total_ev_fmt}**.  
+# == Volume total estimado de **CR evitado**: **{total_ev_fmt}**.  
 - **{len(df_top80)} subcanais** concentram **80%** do potencial: **{top80_names}**.  
 - **Ação**: priorize esses subcanais para maximizar impacto.
         """
@@ -352,3 +352,4 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
