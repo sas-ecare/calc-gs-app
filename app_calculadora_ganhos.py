@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
 import numpy as np
 import base64
 from pathlib import Path
@@ -22,17 +21,15 @@ def check_password():
         else:
             st.session_state["authenticated"] = False
             st.error("Senha incorreta. Tente novamente.")
-
     if "authenticated" not in st.session_state:
         st.session_state["authenticated"] = False
-
     if not st.session_state["authenticated"]:
         st.text_input("🔐 Insira a senha para acessar:", type="password", on_change=password_entered, key="password")
         st.stop()
 
 check_password()
 
-# ====================== FUNÇÃO PARA LOGO ======================
+# ====================== LOGO ======================
 def _find_asset_bytes(name_candidates):
     exts = [".png", ".jpg", ".jpeg", ".webp"]
     try:
@@ -53,7 +50,6 @@ def _find_asset_bytes(name_candidates):
 def load_logo_for_title():
     return _find_asset_bytes(["claro_logo", "logo_claro", "claro"])
 
-# ====================== CABEÇALHO ======================
 logo_bytes = load_logo_for_title()
 if logo_bytes:
     img_b64 = base64.b64encode(logo_bytes).decode()
@@ -67,17 +63,13 @@ if logo_bytes:
         unsafe_allow_html=True
     )
 else:
-    st.markdown(
-        "<h1 style='text-align: center; color: #8B0000; font-size: 50px;'>🖩 Calculadora de Ganhos</h1>",
-        unsafe_allow_html=True
-    )
+    st.markdown("<h1 style='text-align: center; color: #8B0000;'>🖩 Calculadora de Ganhos</h1>", unsafe_allow_html=True)
 
-# ====================== CARREGAR BASE ======================
+# ====================== BASE ======================
 @st.cache_data
 def carregar_dados():
     url_base = "https://raw.githubusercontent.com/gustavo3-freitas/base_calculadora/main/Tabela_Performance.xlsx"
     df = pd.read_excel(url_base, sheet_name="Tabela Performance")
-    df['ANOMES'] = pd.to_datetime(df['ANOMES'].astype(str), format='%Y%m', errors='coerce')
     df['VOL_KPI'] = pd.to_numeric(df['VOL_KPI'], errors='coerce')
     return df
 
@@ -99,28 +91,18 @@ tx_trans_dict = {
     'Padrão': 1.75
 }
 
-tx_uu_cpf_padrao = 12.28
+tx_uu_cpf_dict = {
+    'Padrão': 7.02  # conforme planilha
+}
 
 # ====================== FILTROS ======================
 st.markdown("### 🔎 Filtros de Cenário")
 col1, col2 = st.columns(2)
+segmento = col1.selectbox("📶 Segmento", sorted(df['SEGMENTO'].dropna().unique()))
+subcanais_disponiveis = sorted(df[df['SEGMENTO'] == segmento]['NM_SUBCANAL'].dropna().unique())
+subcanal = col2.selectbox("📌 Subcanal", subcanais_disponiveis)
 
-mes_atual_str = pd.to_datetime(datetime.today()).strftime('%Y-%m')
-anomes = col1.selectbox("🗓️ Mês", sorted(df['ANOMES'].dt.strftime('%Y-%m').dropna().unique()))
-segmento = col2.selectbox("📶 Segmento", sorted(df['SEGMENTO'].dropna().unique()))
-anomes_dt = pd.to_datetime(anomes)
-tp_meta = "Real"
-
-df_segmento = df[
-    (df['ANOMES'] == anomes_dt) &
-    (df['TP_META'] == tp_meta) &
-    (df['SEGMENTO'] == segmento)
-]
-
-subcanais_disponiveis = sorted(df_segmento['NM_SUBCANAL'].dropna().unique())
-subcanal = st.selectbox("📌 Subcanal", subcanais_disponiveis)
-
-df_subcanal = df_segmento[df_segmento['NM_SUBCANAL'] == subcanal]
+df_subcanal = df[(df['SEGMENTO'] == segmento) & (df['NM_SUBCANAL'] == subcanal)]
 tribo_detectada = df_subcanal['NM_TORRE'].dropna().unique()
 tribo = tribo_detectada[0] if len(tribo_detectada) > 0 else "Indefinido"
 
@@ -130,40 +112,43 @@ c2.metric("Canal", tribo)
 c3.metric("Segmento", segmento)
 c4.metric("Subcanal", subcanal)
 
-retido_pct = retido_dict.get(tribo, 1.0)
-cr_segmento = cr_dict.get(segmento, 0.49)
-tx_trans_acessos = tx_trans_dict.get('Padrão', 1.75)
-
 # ====================== PARÂMETROS ======================
 st.markdown("---")
 st.markdown("### ➗ Parâmetros para Simulação")
 colp1, _ = st.columns([2, 1])
 volume_esperado = colp1.number_input("📥 Insira o volume de transações", min_value=0, value=10000)
 
-# ====================== CÁLCULO ======================
+# ====================== CÁLCULOS ======================
 if st.button("🚀 Calcular Ganhos Potenciais"):
 
-    # volume de acessos = volume_transações / taxa
+    retido_pct = retido_dict.get(tribo, 1.0)
+    cr_segmento = cr_dict.get(segmento, 0.49)
+    tx_trans_acessos = tx_trans_dict.get('Padrão', 1.75)
+    tx_uu_cpf = tx_uu_cpf_dict.get('Padrão', 7.02)
+
+    # Volume de acessos
     volume_acessos = volume_esperado / tx_trans_acessos if tx_trans_acessos > 0 else 0
 
-    # MAU (CPF)
+    # MAU (CPF) = SE(Y17="";"";Y13/SE(L5=0;12,28;L5))
     if tx_trans_acessos == 0:
         mau_cpf = 0
     else:
-        tx_uu_cpf = tx_uu_cpf_padrao
+        if tx_uu_cpf in [0, None, np.nan]:
+            tx_uu_cpf = 12.28
         mau_cpf = volume_acessos / tx_uu_cpf
 
     # CR evitado
     cr_evitado = (volume_esperado / tx_trans_acessos) * cr_segmento * retido_pct
 
-    # ===== RESULTADOS =====
+    # ====================== RESULTADOS ======================
     st.markdown("---")
     st.markdown("### 📊 Resultados da Simulação")
+
     r1, r2, r3, r4 = st.columns(4)
     r1.metric("Transações / Acessos", f"{tx_trans_acessos:.2f}")
     r2.metric("CR Segmento (%)", f"{cr_segmento*100:.2f}")
     r3.metric(f"% Retido ({tribo})", f"{retido_pct*100:.2f}")
-    r4.metric("TX UU CPF (Base Apoio)", f"{tx_uu_cpf_padrao:.2f}")
+    r4.metric("TX UU CPF", f"{tx_uu_cpf:.2f}")
 
     valor_formatado = f"{cr_evitado:,.0f}".replace(",", ".")
     st.markdown(
@@ -189,22 +174,22 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
 
     # KPIs auxiliares
     a1, a2 = st.columns(2)
-    a1.metric("📊 Volume de Acessos (Y3/Y17)", f"{volume_acessos:,.0f}".replace(",", "."))
+    a1.metric("📊 Volume de Acessos", f"{volume_acessos:,.0f}".replace(",", "."))
     a2.metric("👤 MAU (CPF)", f"{mau_cpf:,.0f}".replace(",", "."))
 
-    # ===== LOTE POR SUBCANAL =====
+    # ====================== PARETO ======================
     st.markdown("---")
     st.markdown("### 📄 Simulação para Todos os Subcanais")
     resultados_lote = []
     for sub in subcanais_disponiveis:
-        df_sub = df_segmento[df_segmento['NM_SUBCANAL'] == sub]
+        df_sub = df[(df['SEGMENTO'] == segmento) & (df['NM_SUBCANAL'] == sub)]
         tribo_lote = df_sub['NM_TORRE'].dropna().unique()
         tribo_lote = tribo_lote[0] if len(tribo_lote) > 0 else "Indefinido"
         ret_lote = retido_dict.get(tribo_lote, 1.0)
         cr = cr_dict.get(segmento, 0.49)
         estimado = (volume_esperado / tx_trans_acessos) * cr * ret_lote
         vol_acessos_sc = volume_esperado / tx_trans_acessos if tx_trans_acessos > 0 else 0
-        mau_sc = vol_acessos_sc / tx_uu_cpf_padrao
+        mau_sc = vol_acessos_sc / tx_uu_cpf
 
         resultados_lote.append({
             "Subcanal": sub,
@@ -220,7 +205,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     df_lote = pd.DataFrame(resultados_lote)
     st.dataframe(df_lote, use_container_width=True)
 
-    # ===== PARETO =====
+    # ====================== PARETO ======================
     st.markdown("### 🔎 Análise de Pareto - Potencial de Ganho")
     df_pareto = df_lote.sort_values("Volume de CR Evitado", ascending=False).reset_index(drop=True)
     df_pareto["Acumulado"] = df_pareto["Volume de CR Evitado"].cumsum()
@@ -252,13 +237,12 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    # ===== TOP 80% =====
     df_top80 = df_pareto[df_pareto["Acumulado %"] <= 80].copy()
     st.markdown("### 🏆 Subcanais Prioritários (Top 80%)")
     st.dataframe(df_top80[["Subcanal", "Tribo", "Volume de Acessos", "MAU (CPF)", "Volume de CR Evitado", "Acumulado %"]],
                  use_container_width=True)
 
-    # ===== INSIGHT =====
+    # ====================== INSIGHT ======================
     total_ev = df_lote["Volume de CR Evitado"].sum()
     top80_names = ", ".join(df_top80["Subcanal"].tolist())
     total_ev_fmt = f"{total_ev:,.0f}".replace(",", ".")
@@ -271,7 +255,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     )
     st.markdown(insight_text)
 
-    # ===== DOWNLOAD =====
+    # ====================== DOWNLOAD ======================
     buffer = io.BytesIO()
     with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
         df_lote.to_excel(writer, sheet_name="Resultados", index=False)
