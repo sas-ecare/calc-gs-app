@@ -89,7 +89,7 @@ URL_GITHUB_APOIO_ALT = None  # exemplo: "https://raw.githubusercontent.com/.../B
 def carregar_dados():
     # Lê tabela principal
     df = pd.read_excel(URL_GITHUB, sheet_name="Tabela Performance")
-    df['ANOMES'] = pd.to_datetime(df['ANOMES'].astype(str), format='%Y%m', errors='coerce')
+    # df['ANOMES'] = pd.to_datetime(df['ANOMES'].astype(str), format='%Y%m', errors='coerce')
     df['VOL_KPI'] = pd.to_numeric(df['VOL_KPI'], errors='coerce')
     df['CR_DIR']  = pd.to_numeric(df.get('CR_DIR', np.nan), errors='coerce')
 
@@ -157,13 +157,13 @@ retido_dict = {
 st.markdown("### 🔎 Filtros de Cenário")
 col1, col2 = st.columns(2)
 
-mes_atual_str = pd.to_datetime(datetime.today()).strftime('%Y-%m')
-anomes_opcoes = sorted(df['ANOMES'].dt.strftime('%Y-%m').dropna().unique())
-anomes = col1.selectbox(
-    "🗓️ Mês",
-    anomes_opcoes,
-    index=anomes_opcoes.index(mes_atual_str) if mes_atual_str in anomes_opcoes else 0
-)
+#mes_atual_str = pd.to_datetime(datetime.today()).strftime('%Y-%m')
+#anomes_opcoes = sorted(df['ANOMES'].dt.strftime('%Y-%m').dropna().unique())
+#anomes = col1.selectbox(
+ #   "🗓️ Mês",
+  #  anomes_opcoes,
+   # index=anomes_opcoes.index(mes_atual_str) if mes_atual_str in anomes_opcoes else 0
+#)
 
 segmento = col2.selectbox("📶 Segmento", sorted(df['SEGMENTO'].dropna().unique()))
 
@@ -171,7 +171,7 @@ anomes_dt = pd.to_datetime(anomes)
 tp_meta = "Real"
 
 df_segmento = df[
-    (df['ANOMES'] == anomes_dt) &
+ #   (df['ANOMES'] == anomes_dt) &
     (df['TP_META'] == tp_meta) &
     (df['SEGMENTO'] == segmento)
 ]
@@ -388,4 +388,5 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
