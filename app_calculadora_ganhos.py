@@ -273,17 +273,17 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     st.plotly_chart(fig, use_container_width=False)
 
     df_top = df_p[df_p["Acumulado %"] <= 80]
-    st.markdown("### 🏆 Subcanais Prioritários (Top 80%)")
+    st.markdown("### 🧠 Insights")
+    st.markdown(f"""**🏆 Subcanais Prioritários (Top 80%)**)
+    top_names = ", ".join(df_top["Subcanal"].tolist())
+    st.markdown(f"""
+    - Nesta simulação,  **{len(df_top)} subcanais** representam **80 %** do potencial:
+    - **AÇÃO:** priorize estes subcanais para maximizar impacto.""")
     st.dataframe(df_top[["Subcanal","Tribo","Volume CR Evitado","Acumulado %"]],
                  use_container_width=False)
 
  
-    top_names = ", ".join(df_top["Subcanal"].tolist())
-    st.markdown(f"""**🧠 INSIGHTS:**  
-
-- Nesta simulação,  **{len(df_top)} subcanais** concentram **80 %** do potencial: 
-- {top_names}.  
-- **AÇÃO:** priorize estes subcanais para maximizar impacto.""")
+   
 
     # Download Excel
     buffer = io.BytesIO()
@@ -293,6 +293,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     st.download_button("📥 Baixar Excel Completo", buffer.getvalue(),
                        file_name="simulacao_cr.xlsx",
                        mime="application/vnd.ms-excel")
+
 
 
 
