@@ -279,9 +279,8 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
 
     total_ev = int(df_lote["Volume CR Evitado"].sum())
     top_names = ", ".join(df_top["Subcanal"].tolist())
-
-    
- f"""**🧠 INSIGHTS**  
+    st.markdown(
+        f"""**🧠 Insight Automático**  
 
 - **{len(df_top)} subcanais** concentram **80 %** do potencial: **{top_names}**.  
 - **Ação:** priorize estes subcanais para maximizar impacto."""
@@ -298,6 +297,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     st.download_button("📥 Baixar Excel Completo", buffer.getvalue(),
                        file_name="simulacao_cr.xlsx",
                        mime="application/vnd.ms-excel")
+
 
 
 
