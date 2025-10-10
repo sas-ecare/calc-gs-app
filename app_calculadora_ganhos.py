@@ -1,4 +1,4 @@
-# app_calculadora_ganhos.py — versão final (corrigida: leitura 4.1 + Pareto completo)
+# app_calculadora_ganhos.py — versão final (corrigida: 4.1 - Usuários Únicos (CPF))
 import io, base64
 from pathlib import Path
 import numpy as np, pandas as pd, plotly.graph_objects as go, streamlit as st
@@ -82,7 +82,7 @@ def regra_retido_por_tribo(tribo):
     return RETIDO_DICT.get(tribo,RETIDO_DICT["Web"])
 
 def tx_uu_cpf_dyn(df_all, segmento, subcanal, anomes, tribo):
-    """ Aplica filtros da tabela dinâmica e calcula TX_UU/CPF """
+    """Aplica filtros exatos (ANOMES, SEGMENTO, NM_SUBCANAL, NM_TORRE) e usa 4.1 - Usuários Únicos (CPF)"""
     df_filt = df_all[
         (df_all["TP_META"].str.lower() == "real") &
         (df_all["ANOMES"] == anomes) &
@@ -91,8 +91,9 @@ def tx_uu_cpf_dyn(df_all, segmento, subcanal, anomes, tribo):
         (df_all["NM_TORRE"] == tribo)
     ]
 
-    vt = sum_kpi(df_filt,[r"7\.1","Transa"])
-    vu = sum_kpi(df_filt,[r"4\.1","Usuár","Únic","CPF"])
+    vt = sum_kpi(df_filt,[r"7\.1\s*-\s*Transa","Transações"])
+    # leitura corrigida: 4.1 - Usuários Únicos (CPF)
+    vu = sum_kpi(df_filt,[r"4\.1\s*-\s*Usuários Únicos \(CPF\)"])
     if vt>0 and vu>0:
         return (vt/vu, vt, vu, "NM_SUBCANAL", anomes)
     else:
@@ -166,7 +167,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         | Item | Valor |
         |------|-------:|
         | Volume Transações (7.1) | {fmt_int(vol_trn_real)} |
-        | Volume Usuários Únicos (4.1) | {fmt_int(vol_user_real)} |
+        | Volume Usuários Únicos (4.1 - CPF) | {fmt_int(vol_user_real)} |
         | TX_UU_CPF Calculado | {tx_uu_cpf:.2f} |
         | Origem | {origem_tx} |
         | CR Segmento | {cr_segmento*100:.2f}% |
@@ -185,7 +186,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         padding:6px 16px;border-radius:12px;line-height:1">{fmt_int(vol_lig_ev_hum)}</div>
         </div></div>""", unsafe_allow_html=True)
 
-    st.caption("Fórmulas: Acessos = Transações ÷ (Tx Transações/Acesso).  MAU = Transações ÷ (Transações/Usuários Únicos no NM_SUBCANAL e ANOMES selecionado).  CR Evitado = Acessos × CR × %Retido.")
+    st.caption("Fórmulas: Acessos = Transações ÷ (Tx Transações/Acesso).  MAU = Transações ÷ (Transações/Usuários Únicos).  CR Evitado = Acessos × CR × %Retido.")
 
     # =================== PARETO ===================
     st.markdown("---")
