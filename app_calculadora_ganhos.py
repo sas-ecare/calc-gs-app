@@ -1,5 +1,5 @@
-# app_calculadora_ganhos.py — versão final (13/10/2025)
-# Correção definitiva: leitura robusta de KPIs (7.1, 4.1, 6), Pareto e exportação Excel.
+# app_calculadora_ganhos.py — versão final (14/10/2025)
+# Produção: leitura limpa da base Tabela_Performance_v2.xlsx, sem debug e com cache limpo.
 
 import io, base64, unicodedata, re
 from pathlib import Path
@@ -65,8 +65,9 @@ def normalize_text(s):
     return s.strip()
 
 # ====================== BASE ======================
-st.cache_data.clear()
 URL = "https://raw.githubusercontent.com/gustavo3-freitas/base_calculadora/main/Tabela_Performance_v2.xlsx"
+
+st.cache_data.clear()  # força atualização da base
 
 @st.cache_data(show_spinner=True)
 def carregar_dados():
@@ -94,7 +95,6 @@ def regra_retido_por_tribo(tribo):
 
 # ====================== FUNÇÕES DE LEITURA ======================
 def soma_kpi(df_scope, termos):
-    """Busca múltiplos termos possíveis dentro de NM_KPI_NORM"""
     mask = False
     for termo in termos:
         mask |= df_scope["NM_KPI_NORM"].str.contains(termo, case=False, na=False)
@@ -109,15 +109,9 @@ def get_volumes(df, segmento, subcanal, anomes):
         (df["ANOMES"] == anomes)
     ].copy()
 
-    # Debug visual: linhas filtradas
-    st.info(f"🔎 Linhas encontradas — Segmento: {segmento} | Subcanal: {subcanal} | ANOMES: {anomes}")
-    st.dataframe(df_f[["ANOMES","SEGMENTO","NM_SUBCANAL","NM_KPI","VOL_KPI"]], use_container_width=True)
-
     vol_71 = soma_kpi(df_f, ["transacao", "transa", "7 1"])
     vol_41 = soma_kpi(df_f, ["usuario unico", "cpf", "4 1"])
     vol_6  = soma_kpi(df_f, ["acesso", "6 "])
-
-    st.info(f"📊 Volumes → Transações: {vol_71} | Usuários Únicos CPF: {vol_41} | Acessos: {vol_6}")
     return float(vol_71), float(vol_41), float(vol_6)
 
 def tx_trn_por_acesso(vol_71, vol_6):
@@ -274,5 +268,3 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     st.download_button("📥 Baixar Excel Completo", buffer.getvalue(),
                        file_name="simulacao_cr.xlsx",
                        mime="application/vnd.ms-excel")
-
-
