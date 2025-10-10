@@ -1,4 +1,4 @@
-# app_calculadora_ganhos.py — versão final validada com base em Tabela_Performance.xlsx
+# app_calculadora_ganhos.py — versão com diagnóstico e correção de MAU (CPF)
 import io, base64
 from pathlib import Path
 import numpy as np, pandas as pd, plotly.graph_objects as go, streamlit as st
@@ -71,14 +71,18 @@ def tx_trn_por_acesso(df_scope):
     return max(vt/va,1.0)
 
 def tx_uu_cpf_dyn(df_all, segmento, subcanal):
-    """Calcula TX_UU_CPF = (Transações ÷ Usuários Únicos) no nível de subcanal + segmento."""
+    """Calcula TX_UU_CPF considerando apenas o último ANOMES disponível."""
     df_seg = df_all[df_all["SEGMENTO"]==segmento]
     df_sub = df_seg[df_seg["NM_SUBCANAL"]==subcanal]
+    if "ANOMES" in df_sub.columns and not df_sub["ANOMES"].isna().all():
+        df_sub = df_sub.sort_values("ANOMES").tail(1)
     vt_sub = sum_kpi(df_sub,[r"7\.1","Transa"])
     vu_sub = sum_kpi(df_sub,[r"4\.1","Usuár","Únic","CPF"])
-    if vt_sub>0 and vu_sub>0:
-        return vt_sub/vu_sub
-    return DEFAULT_TX_UU_CPF
+    origem = "Subcanal (último ANOMES)"
+    if not (vt_sub>0 and vu_sub>0):
+        origem = "Fallback padrão"
+        return DEFAULT_TX_UU_CPF, 0, 0, origem
+    return vt_sub/vu_sub, vt_sub, vu_sub, origem
 
 def regra_retido_por_tribo(tribo):
     if str(tribo).strip().lower()=="dma": return RETIDO_DICT["Bot"]
@@ -115,29 +119,45 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     # Fórmulas 1–4
     tx_trn_acc = tx_trn_por_acesso(df_sub)
     cr_segmento = CR_SEGMENTO.get(segmento,0.50)
-    perc_lig_dir_hum = CR_SEGMENTO.get(segmento,0.50)  # igual à % ligação humana
+    perc_lig_dir_hum = CR_SEGMENTO.get(segmento,0.50)
     retido = regra_retido_por_tribo(tribo)
 
     # Fórmulas 5–7
     vol_acessos = volume_trans/tx_trn_acc
-    tx_uu_cpf = tx_uu_cpf_dyn(df,segmento,subcanal)
+    tx_uu_cpf, vol_trn_real, vol_user_real, origem_tx = tx_uu_cpf_dyn(df,segmento,subcanal)
     mau_cpf = volume_trans/(tx_uu_cpf if tx_uu_cpf>0 else DEFAULT_TX_UU_CPF)
     vol_lig_ev_hum = (volume_trans/tx_trn_acc)*cr_segmento*retido
 
-    # =================== RESULTADOS GERAIS ===================
+    # =================== RESULTADOS ===================
     st.markdown("---")
     st.markdown("### 📊 Resultados Detalhados (Fórmulas)")
     c1,c2,c3 = st.columns(3)
     c1.metric("Volume de Transações", fmt_int(volume_trans))
     c2.metric("Taxa de Transação × Acesso", f"{tx_trn_acc:.2f}")
     c3.metric("% Ligação Direcionada Humano", f"{cr_segmento*100:.2f}%")
-
     c4,c5,c6 = st.columns(3)
     c4.metric("Retido Digital 72h", f"{retido*100:.2f}%")
     c5.metric("Volume de Acessos", fmt_int(vol_acessos))
     c6.metric("Volume de MAU (CPF)", fmt_int(mau_cpf))
 
-    # card premium
+    # =================== EXPANDER DIAGNÓSTICO ===================
+    with st.expander("🔍 Diagnóstico de Premissas", expanded=False):
+        st.markdown(f"""
+        **Segmento:** {segmento}  
+        **Subcanal:** {subcanal}  
+        **Tribo:** {tribo}  
+
+        | Item | Valor |
+        |------|-------:|
+        | Volume Transações (7.1) | {fmt_int(vol_trn_real)} |
+        | Volume Usuários Únicos (4.1) | {fmt_int(vol_user_real)} |
+        | TX_UU_CPF Calculado | {tx_uu_cpf:.2f} |
+        | Origem | {origem_tx} |
+        | CR Segmento | {cr_segmento*100:.2f}% |
+        | % Retido Aplicado | {retido*100:.2f}% |
+        """, unsafe_allow_html=True)
+
+    # =================== CARD DE RESULTADO ===================
     st.markdown(
         f"""
         <div style="max-width:520px;margin:18px auto;padding:18px 22px;
@@ -154,13 +174,12 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     # =================== PARETO / LOTE ===================
     st.markdown("---")
     st.markdown("### 📄 Simulação - Todos os Subcanais")
-
     resultados=[]
-    for sub in subcanais:
+    for sub in sorted(subcanais):
         df_i=df[(df["SEGMENTO"]==segmento)&(df["NM_SUBCANAL"]==sub)]
         tribo_i=df_i["NM_TORRE"].dropna().unique().tolist()[0] if not df_i.empty else "Indefinido"
         tx_i=tx_trn_por_acesso(df_i)
-        tx_uu_i=tx_uu_cpf_dyn(df,segmento,sub)
+        tx_uu_i,_,_,_=tx_uu_cpf_dyn(df,segmento,sub)
         ret_i=regra_retido_por_tribo(tribo_i)
         cr_seg_i=CR_SEGMENTO.get(segmento,0.50)
         vol_acc_i=volume_trans/tx_i
@@ -171,11 +190,10 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
             "% Lig. Humano":round(cr_seg_i*100,2),"↓ % Retido":round(ret_i*100,2),
             "Volume de Acessos":int(vol_acc_i),"MAU (CPF)":int(mau_i),
             "Volume de CR Evitado":int(est_i)})
-
     df_lote=pd.DataFrame(resultados)
     st.dataframe(df_lote,use_container_width=False)
 
-    # Pareto
+    # =================== PARETO ===================
     st.markdown("### 🔎 Análise de Pareto - Potencial de Ganho")
     df_p=df_lote.sort_values("Volume de CR Evitado",ascending=False).reset_index(drop=True)
     tot=df_p["Volume de CR Evitado"].sum()
@@ -211,7 +229,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
 - **{len(df_top)} subcanais** concentram **80 %** do potencial: **{top_names}**.  
 - **Ação:** priorize estes subcanais para maximizar impacto.""")
 
-    # Download
+    # =================== DOWNLOAD ===================
     buffer=io.BytesIO()
     with pd.ExcelWriter(buffer,engine="xlsxwriter") as w:
         df_lote.to_excel(w,sheet_name="Resultados",index=False)
