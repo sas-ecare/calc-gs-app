@@ -87,19 +87,20 @@ def get_volumes(df, segmento, subcanal, anomes):
     ]
 
     vol_71 = df_f.loc[
-        df_f["NM_KPI"].str.contains("7.1", case=False, na=False) &
-        df_f["NM_KPI"].str.contains("Transa", case=False, na=False),
+        df_f["NM_KPI_NORM"].str.contains(r"7\.1") &
+        df_f["NM_KPI_NORM"].str.contains("transa"),
         "VOL_KPI"
     ].sum()
 
     vol_41 = df_f.loc[
-        df_f["NM_KPI"].str.contains("4", case=True, na=True),
+        df_f["NM_KPI_NORM"].str.contains(r"4\.1") &
+        df_f["NM_KPI_NORM"].str.contains("cpf"),
         "VOL_KPI"
     ].sum()
 
     vol_6 = df_f.loc[
-        df_f["NM_KPI"].str.contains("6", case=False, na=False) &
-        df_f["NM_KPI"].str.contains("Acesso", case=False, na=False),
+        df_f["NM_KPI_NORM"].str.contains(r"\b6\b") &
+        df_f["NM_KPI_NORM"].str.contains("acesso"),
         "VOL_KPI"
     ].sum()
 
@@ -293,6 +294,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     st.download_button("📥 Baixar Excel Completo", buffer.getvalue(),
                        file_name="simulacao_cr.xlsx",
                        mime="application/vnd.ms-excel")
+
 
 
 
