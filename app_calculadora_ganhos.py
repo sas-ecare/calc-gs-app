@@ -1,5 +1,5 @@
-# app_calculadora_ganhos.py — versão final (10/10/2025)
-# Correção completa: leitura precisa 7.1 / 4.1-CPF, diagnóstico detalhado, Pareto e exportação Excel.
+# app_calculadora_ganhos.py — versão final (11/10/2025)
+# Ajustado para base padronizada: NM_KPI = usuarios_unicos_cpf / transacoes / acessos
 
 import io, base64
 from pathlib import Path
@@ -60,6 +60,7 @@ def carregar_dados():
     df = df[df["TP_META"].astype(str).str.lower().eq("real")].copy()
     df["VOL_KPI"] = pd.to_numeric(df["VOL_KPI"], errors="coerce").fillna(0)
     df["ANOMES"] = pd.to_numeric(df["ANOMES"], errors="coerce").astype(int)
+    df["NM_KPI"] = df["NM_KPI"].astype(str).str.strip().str.lower()
     return df
 
 df = carregar_dados()
@@ -78,38 +79,24 @@ def regra_retido_por_tribo(tribo):
 
 # ====================== FUNÇÕES DE LEITURA ======================
 def get_volumes(df, segmento, subcanal, anomes):
-    """Retorna volumes de 7.1 (Transações), 4.1 (CPF) e 6 (Acessos) com filtros exatos."""
+    """Retorna volumes de transacoes, usuarios_unicos_cpf e acessos com filtros exatos."""
     df_f = df[
-        (df["SEGMENTO"] == segmento) &
-        (df["NM_SUBCANAL"] == subcanal) &
-        (df["ANOMES"] == anomes) &
-        (df["TP_META"].astype(str).str.lower() == "real")
+        (df["SEGMENTO"] == segmento)
+        & (df["NM_SUBCANAL"] == subcanal)
+        & (df["ANOMES"] == anomes)
+        & (df["TP_META"].astype(str).str.lower() == "real")
     ]
 
-    vol_71 = df_f.loc[
-        df_f["NM_KPI"].str.contains("7.1", case=False, na=False) &
-        df_f["NM_KPI"].str.contains("Transa", case=False, na=False),
-        "VOL_KPI"
-    ].sum()
-
-    vol_41 = df_f.loc[
-        df_f["NM_KPI"].str.contains("4", case=True, na=True),
-        "VOL_KPI"
-    ].sum()
-
-    vol_6 = df_f.loc[
-        df_f["NM_KPI"].str.contains("6", case=False, na=False) &
-        df_f["NM_KPI"].str.contains("Acesso", case=False, na=False),
-        "VOL_KPI"
-    ].sum()
+    vol_71 = df_f.loc[df_f["NM_KPI"].eq("transacoes"), "VOL_KPI"].sum()
+    vol_41 = df_f.loc[df_f["NM_KPI"].eq("usuarios_unicos_cpf"), "VOL_KPI"].sum()
+    vol_6 = df_f.loc[df_f["NM_KPI"].eq("acessos"), "VOL_KPI"].sum()
 
     return float(vol_71), float(vol_41), float(vol_6)
 
 def tx_trn_por_acesso(vol_71, vol_6):
     if vol_6 <= 0:
         return 1.0
-    tx = vol_71 / vol_6
-    return max(tx, 1.0)
+    return max(vol_71 / vol_6, 1.0)
 
 def tx_uu_por_cpf(vol_71, vol_41):
     if vol_41 <= 0:
@@ -133,9 +120,9 @@ subcanais = sorted(df.loc[df["SEGMENTO"] == segmento, "NM_SUBCANAL"].dropna().un
 subcanal = c3.selectbox("📌 Subcanal", subcanais)
 
 df_sub = df[
-    (df["SEGMENTO"] == segmento) &
-    (df["NM_SUBCANAL"] == subcanal) &
-    (df["ANOMES"] == anomes_escolhido)
+    (df["SEGMENTO"] == segmento)
+    & (df["NM_SUBCANAL"] == subcanal)
+    & (df["ANOMES"] == anomes_escolhido)
 ]
 tribo = df_sub["NM_TORRE"].dropna().unique().tolist()[0] if not df_sub.empty else "Indefinido"
 
@@ -168,14 +155,13 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     st.markdown("### 📊 Resultados Detalhados (Fórmulas)")
     c1, c2, c3 = st.columns(3)
     c1.metric("Volume de Transações (Input)", fmt_int(volume_trans))
-    c2.metric("Taxa Transação × Acesso (7.1 ÷ 6)", f"{tx_trn_acc:.2f}")
+    c2.metric("Taxa Transação × Acesso (transacoes ÷ acessos)", f"{tx_trn_acc:.2f}")
     c3.metric("% Ligação Direcionada Humano", f"{cr_segmento*100:.2f}%")
     c4, c5, c6 = st.columns(3)
     c4.metric("Retido Digital 72h", f"{retido*100:.2f}%")
     c5.metric("Volume de Acessos", fmt_int(vol_acessos))
     c6.metric("Volume de MAU (CPF)", fmt_int(mau_cpf))
 
-    # Diagnóstico
     with st.expander("🔍 Diagnóstico de Premissas", expanded=False):
         st.markdown(f"""
         **Segmento:** {segmento}  
@@ -185,16 +171,16 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
 
         | Item | Valor |
         |------|------:|
-        | Volume 7.1 - Transações | {fmt_int(vol_71)} |
-        | Volume 4.1 - Usuários Únicos (CPF) | {fmt_int(vol_41)} |
-        | Volume 6 - Acessos Usuários | {fmt_int(vol_6)} |
-        | **Tx Transações/Acessos (7.1 ÷ 6)** | {tx_trn_acc:.2f} |
-        | **Tx UU/CPF (7.1 ÷ 4.1)** | {tx_uu_cpf:.2f} |
+        | Volume transacoes | {fmt_int(vol_71)} |
+        | Volume usuarios_unicos_cpf | {fmt_int(vol_41)} |
+        | Volume acessos | {fmt_int(vol_6)} |
+        | **Tx Transações/Acessos** | {tx_trn_acc:.2f} |
+        | **Tx UU/CPF** | {tx_uu_cpf:.2f} |
         | CR Segmento | {cr_segmento*100:.2f}% |
         | % Retido Aplicado | {retido*100:.2f}% |
         """, unsafe_allow_html=True)
 
-    # Card KPI
+    # CARD
     st.markdown(
         f"""
         <div style="max-width:520px;margin:18px auto;padding:18px 22px;
@@ -210,7 +196,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         unsafe_allow_html=True,
     )
 
-    st.caption("Fórmulas: Acessos = Transações ÷ (Tx 7.1/6).  MAU = Transações ÷ (Tx 7.1/4.1).  CR Evitado = Acessos × CR × %Retido.")
+    st.caption("Fórmulas: Acessos = Transações ÷ Tx(Trans/Acessos).  MAU = Transações ÷ Tx(Trans/CPF).  CR Evitado = Acessos × CR × %Retido.")
 
     # =================== PARETO ===================
     st.markdown("---")
@@ -218,9 +204,9 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     resultados = []
     for sub in sorted(df.loc[df["SEGMENTO"] == segmento, "NM_SUBCANAL"].dropna().unique()):
         df_i = df[
-            (df["SEGMENTO"] == segmento) &
-            (df["NM_SUBCANAL"] == sub) &
-            (df["ANOMES"] == anomes_escolhido)
+            (df["SEGMENTO"] == segmento)
+            & (df["NM_SUBCANAL"] == sub)
+            & (df["ANOMES"] == anomes_escolhido)
         ]
         tribo_i = df_i["NM_TORRE"].dropna().unique().tolist()[0] if not df_i.empty else "Indefinido"
         v71, v41, v6 = get_volumes(df, segmento, sub, anomes_escolhido)
@@ -236,11 +222,11 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         resultados.append({
             "Subcanal": sub,
             "Tribo": tribo_i,
-            "Transações/Acesso (7.1/6)": round(tx_i,2),
-            "Tx UU/CPF (7.1/4.1)": round(tx_uu_i,2),
+            "Tx Trans/Acessos": round(tx_i,2),
+            "Tx UU/CPF": round(tx_uu_i,2),
             "% Retido": round(ret_i*100,2),
             "% CR": round(cr_i*100,2),
-            "Volume de Acessos": int(vol_acc_i),
+            "Volume Acessos": int(vol_acc_i),
             "MAU (CPF)": int(mau_i),
             "Volume CR Evitado": int(est_i)
         })
@@ -293,11 +279,3 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     st.download_button("📥 Baixar Excel Completo", buffer.getvalue(),
                        file_name="simulacao_cr.xlsx",
                        mime="application/vnd.ms-excel")
-
-
-
-
-
-
-
-
