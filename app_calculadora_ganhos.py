@@ -1,5 +1,6 @@
-# app_calculadora_ganhos.py — versão FINAL (11/10/2025)
-# Correção: leitura robusta e exata de “4.1 - Usuários Únicos (CPF)” com acentos ignorados
+# app_calculadora_ganhos.py — versão final (11/10/2025)
+# Correção final: leitura precisa e robusta de 7.1 / 4.1 (CPF) / 6, Pareto e Excel.
+
 import io, base64, re, unicodedata
 from pathlib import Path
 import numpy as np
@@ -22,6 +23,7 @@ def check_password():
         st.text_input("🔐 Insira a senha:", type="password",
                       on_change=password_entered, key="password")
         st.stop()
+
 check_password()
 
 # ====================== LOGO ======================
@@ -74,16 +76,16 @@ def regra_retido_por_tribo(tribo):
         return RETIDO_DICT["Bot"]
     return RETIDO_DICT.get(tribo, RETIDO_DICT["Web"])
 
-def remover_acentos(txt):
-    if pd.isna(txt): return ""
-    txt = str(txt)
-    txt = unicodedata.normalize("NFD", txt)
-    txt = "".join(ch for ch in txt if unicodedata.category(ch) != "Mn")
-    return txt
+def normalizar_texto(s):
+    if pd.isna(s): return ""
+    s = str(s)
+    s = unicodedata.normalize("NFD", s)
+    s = "".join(ch for ch in s if unicodedata.category(ch) != "Mn")
+    return s.lower().strip()
 
 # ====================== FUNÇÃO ROBUSTA DE LEITURA ======================
 def get_volumes(df, segmento, subcanal, anomes):
-    """Leitura fiel dos KPIs 7.1, 4.1 e 6 (Acessos) com regex e acentos ignorados."""
+    """Lê volumes de 7.1 (Transações), 4.1 (CPF) e 6 (Acessos) com regex robusto e texto normalizado."""
     df_f = df[
         (df["SEGMENTO"] == segmento)
         & (df["NM_SUBCANAL"] == subcanal)
@@ -91,28 +93,24 @@ def get_volumes(df, segmento, subcanal, anomes):
         & (df["TP_META"].astype(str).str.lower() == "real")
     ].copy()
 
-    # Remove acentos e padroniza letras
-    df_f["NM_KPI_NORM"] = df_f["NM_KPI"].map(remover_acentos).str.lower()
-
-    # 7.1 - Transações
-    vol_71 = df_f.loc[
-        df_f["NM_KPI_NORM"].str.contains(r"\b7\.1\b") &
-        df_f["NM_KPI_NORM"].str.contains("transa"),
+    # Normaliza textos
+     vol_71 = df_f.loc[
+        df_f["NM_KPI"].str.contains(r"7\.1") &
+        df_f["NM_KPI"].str.contains("transa"),
         "VOL_KPI"
     ].sum()
 
-    # 4.1 - Usuários Únicos (CPF)
     vol_41 = df_f.loc[
-        df_f["NM_KPI_NORM"].str.contains(r"4\.1") &
-        df_f["NM_KPI_NORM"].str.contains("usuarios unicos") &
-        df_f["NM_KPI_NORM"].str.contains("cpf"),
+        df_f["ANOMES"].astype(int).eq(202508) &
+        df["NM_KPI"].str.contains(pat_41, regex=True, na=False) &
+        df["NM_KPI"].str.contains("usuarios unicos", na=False) &
+        df["NM_KPI"].str.contains("cpf", na=False),
         "VOL_KPI"
     ].sum()
 
-    # 6 - Acessos Usuários
     vol_6 = df_f.loc[
-        df_f["NM_KPI_NORM"].str.contains(r"\b6\b") &
-        df_f["NM_KPI_NORM"].str.contains("acess"),
+        df_f["NM_KPI"].str.contains(r"\b6\b") &
+        df_f["NM_KPI"].str.contains("acesso"),
         "VOL_KPI"
     ].sum()
 
@@ -194,7 +192,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         | Item | Valor |
         |------|------:|
         | Volume 7.1 - Transações | {fmt_int(vol_71)} |
-        | **Volume 4.1 - Usuários Únicos (CPF)** | **{fmt_int(vol_41)}** |
+        | Volume 4.1 - Usuários Únicos (CPF) | {fmt_int(vol_41)} |
         | Volume 6 - Acessos Usuários | {fmt_int(vol_6)} |
         | **Tx Transações/Acessos (7.1 ÷ 6)** | {tx_trn_acc:.2f} |
         | **Tx UU/CPF (7.1 ÷ 4.1)** | {tx_uu_cpf:.2f} |
