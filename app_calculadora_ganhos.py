@@ -1,4 +1,4 @@
-# app_calculadora_ganhos.py — versão completa com métricas detalhadas
+# app_calculadora_ganhos.py — versão final validada com base em Tabela_Performance.xlsx
 import io, base64
 from pathlib import Path
 import numpy as np, pandas as pd, plotly.graph_objects as go, streamlit as st
@@ -71,14 +71,13 @@ def tx_trn_por_acesso(df_scope):
     return max(vt/va,1.0)
 
 def tx_uu_cpf_dyn(df_all, segmento, subcanal):
+    """Calcula TX_UU_CPF = (Transações ÷ Usuários Únicos) no nível de subcanal + segmento."""
     df_seg = df_all[df_all["SEGMENTO"]==segmento]
     df_sub = df_seg[df_seg["NM_SUBCANAL"]==subcanal]
     vt_sub = sum_kpi(df_sub,[r"7\.1","Transa"])
-    vu_sub = sum_kpi(df_sub,[r"4\.1","Usuár","Únic"])
-    if vt_sub>0 and vu_sub>0: return vt_sub/vu_sub
-    vt_seg = sum_kpi(df_seg,[r"7\.1","Transa"])
-    vu_seg = sum_kpi(df_seg,[r"4\.1","Usuár","Únic"])
-    if vt_seg>0 and vu_seg>0: return vt_seg/vu_seg
+    vu_sub = sum_kpi(df_sub,[r"4\.1","Usuár","Únic","CPF"])
+    if vt_sub>0 and vu_sub>0:
+        return vt_sub/vu_sub
     return DEFAULT_TX_UU_CPF
 
 def regra_retido_por_tribo(tribo):
@@ -116,7 +115,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     # Fórmulas 1–4
     tx_trn_acc = tx_trn_por_acesso(df_sub)
     cr_segmento = CR_SEGMENTO.get(segmento,0.50)
-    perc_lig_dir_hum = CR_SEGMENTO.get(segmento,0.50)  # mesma taxa (% ligação humana)
+    perc_lig_dir_hum = CR_SEGMENTO.get(segmento,0.50)  # igual à % ligação humana
     retido = regra_retido_por_tribo(tribo)
 
     # Fórmulas 5–7
@@ -132,11 +131,11 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     c1.metric("Volume de Transações", fmt_int(volume_trans))
     c2.metric("Taxa de Transação × Acesso", f"{tx_trn_acc:.2f}")
     c3.metric("% Ligação Direcionada Humano", f"{cr_segmento*100:.2f}%")
-    c4,c5,c6,c7 = st.columns(4)
+
+    c4,c5,c6 = st.columns(3)
     c4.metric("Retido Digital 72h", f"{retido*100:.2f}%")
-    c5.metric("Volume Ligações Evitadas Humano", fmt_int(vol_lig_ev_hum))
-    c6.metric("Volume de Acessos", fmt_int(vol_acessos))
-    c7.metric("Volume de MAU (CPF)", fmt_int(mau_cpf))
+    c5.metric("Volume de Acessos", fmt_int(vol_acessos))
+    c6.metric("Volume de MAU (CPF)", fmt_int(mau_cpf))
 
     # card premium
     st.markdown(
@@ -149,6 +148,8 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
         padding:6px 16px;border-radius:12px;line-height:1">{fmt_int(vol_lig_ev_hum)}</div>
         </div></div>""", unsafe_allow_html=True)
+
+    st.caption("Fórmulas: Acessos = Transações ÷ (Tx Transações/Acesso).  MAU = Transações ÷ (Transações/Usuários).  CR Evitado = Acessos × CR × %Retido.")
 
     # =================== PARETO / LOTE ===================
     st.markdown("---")
