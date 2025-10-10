@@ -96,9 +96,6 @@ def get_volumes(df, segmento, subcanal, anomes):
         df_f["NM_KPI"].str.contains(r"\b4\.1\b", regex=True, na=False) &
         df_f["NM_KPI"].str.contains("cpf", case=False, na=False),
         "VOL_KPI"
-
-        df_f["NM_KPI"].str.contains("4", case=True, na=True),
-        "VOL_KPI"
     ].sum()
 
     vol_6 = df_f.loc[
@@ -297,6 +294,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     st.download_button("📥 Baixar Excel Completo", buffer.getvalue(),
                        file_name="simulacao_cr.xlsx",
                        mime="application/vnd.ms-excel")
+
 
 
 
