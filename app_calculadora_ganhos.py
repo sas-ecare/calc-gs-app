@@ -198,12 +198,12 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     # =================== KPI CARD ===================
     st.markdown(
         f"""
-        <div style="max-width:520px; padding:18px 22px;
+        <div style="max-width:520px; padding:30px 45px;
         background:linear-gradient(90deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
         border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;">
           <div style="display:flex;justify-content:space-between;align-items:center">
-            <div style="font-weight:700;font-size:20px;">Volume de CR Evitado Estimado</div>
-            <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
+            <div style="font-weight:700;font-size:30px;">Volume de CR Evitado Estimado</div>
+            <div style="font-weight:800;font-size:40px;background:#fff;color:#b31313;
                         padding:6px 16px;border-radius:12px;line-height:1">{fmt_int(cr_evitado_floor)}</div>
           </div>
         </div>
@@ -292,6 +292,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     st.download_button("📥 Baixar Excel Completo", buffer.getvalue(),
                        file_name="simulacao_cr.xlsx",
                        mime="application/vnd.ms-excel")
+
 
 
 
