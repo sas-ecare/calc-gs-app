@@ -1,4 +1,4 @@
-# app_calculadora_ganhos.py — versão final (corrigida e estável)
+# app_calculadora_ganhos.py — versão final e estável (NM_SUBCANAL principal, fallback Subcanal1)
 import io, base64, re, unicodedata
 from pathlib import Path
 import numpy as np, pandas as pd, plotly.graph_objects as go, streamlit as st
@@ -73,11 +73,14 @@ def carregar_dados():
     # normaliza chaves
     df["KPI_KEY"] = df["NM_KPI"].map(_norm_txt)
     df["SEG_KEY"] = df["SEGMENTO"].map(_norm_txt)
-    if "Subcanal1" in df.columns:
-        df["SUB_KEY"] = df["Subcanal1"].map(_norm_txt)
-    else:
-        df["SUB_KEY"] = df["NM_SUBCANAL"].map(_norm_txt)
     df["TORRE_KEY"] = df["NM_TORRE"].map(_norm_txt)
+
+    # define coluna de subcanal (prioriza Subcanal1, se válida)
+    if "Subcanal1" in df.columns and df["Subcanal1"].notna().any():
+        df["COL_SUBCANAL"] = df["Subcanal1"]
+    else:
+        df["COL_SUBCANAL"] = df["NM_SUBCANAL"]
+    df["SUB_KEY"] = df["COL_SUBCANAL"].map(_norm_txt)
     return df
 
 df = carregar_dados()
@@ -123,7 +126,7 @@ def tx_uu_cpf_dyn(df_all, segmento, subcanal, anomes, tribo):
 
     if vt>0 and vu>0:
         tx_calc = vt/vu
-        return (tx_calc, vt, vu, "Subcanal1", anomes, tx_calc)
+        return (tx_calc, vt, vu, "COL_SUBCANAL", anomes, tx_calc)
 
     # fallback por segmento
     df_seg = df_all[(df_all["ANOMES"]==anomes)&(df_all["SEG_KEY"]==seg_key)]
@@ -131,7 +134,7 @@ def tx_uu_cpf_dyn(df_all, segmento, subcanal, anomes, tribo):
     vu_s = vol_by_kpi(df_seg, KPI_UU_CPF)
     if vt_s>0 and vu_s>0:
         tx_calc = vt_s/vu_s
-        return (tx_calc, vt_s, vu_s, "Segmento", anomes, tx_calc)
+        return (tx_calc, vt_s, vu_s, "SEGMENTO", anomes, tx_calc)
 
     return (DEFAULT_TX_UU_CPF, vt, vu, "Fallback", anomes, 0.0)
 
@@ -148,10 +151,10 @@ map_anomes_legivel = dict(zip(mes_legivel, anomes_unicos))
 anomes_legivel = c2.selectbox("🗓️ Mês", mes_legivel, index=len(mes_legivel)-1)
 anomes_escolhido = map_anomes_legivel[anomes_legivel]
 
-subcanais = sorted(df.loc[df["SEGMENTO"]==segmento,"Subcanal1"].dropna().unique())
+subcanais = sorted(df.loc[df["SEGMENTO"]==segmento,"COL_SUBCANAL"].dropna().unique())
 subcanal = c3.selectbox("📌 Subcanal", subcanais)
 
-df_sub = df[(df["SEGMENTO"]==segmento)&(df["Subcanal1"]==subcanal)&(df["ANOMES"]==anomes_escolhido)]
+df_sub = df[(df["SEGMENTO"]==segmento)&(df["COL_SUBCANAL"]==subcanal)&(df["ANOMES"]==anomes_escolhido)]
 tribo = df_sub["NM_TORRE"].dropna().unique().tolist()[0] if not df_sub.empty else "Indefinido"
 
 k1,k2,k3,k4 = st.columns(4)
