@@ -52,7 +52,7 @@ CR_SEGMENTO = {"Móvel":0.4947,"Residencial":0.4989}
 DEFAULT_TX_UU_CPF = 12.28
 
 # ====================== BASE ======================
-URL = "https://raw.githubusercontent.com/gustavo3-freitas/base_calculadora/main/Tabela_Performance.xlsx"
+URL = "https://raw.githubusercontent.com/gustavo3-freitas/base_calculadora/main/Tabela_Performance_v2.xlsx"
 
 @st.cache_data(show_spinner=True)
 def carregar_dados():
