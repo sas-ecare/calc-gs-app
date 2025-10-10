@@ -1,5 +1,6 @@
-# app_calculadora_ganhos.py — versão final (12/10/2025)
-# Correção definitiva: leitura de KPIs com acentos, hífens e espaços irregulares
+# app_calculadora_ganhos.py — versão final (13/10/2025)
+# Correção definitiva: leitura robusta de KPIs (7.1, 4.1, 6), Pareto e exportação Excel.
+
 import io, base64, unicodedata, re
 from pathlib import Path
 import numpy as np
@@ -52,12 +53,14 @@ DEFAULT_TX_UU_CPF = 12.28
 
 # ====================== NORMALIZAÇÃO ======================
 def normalize_text(s):
+    """Remove acentos, pontuação e prefixos numéricos."""
     if pd.isna(s):
         return ""
     s = str(s).lower().strip()
     s = unicodedata.normalize("NFD", s)
-    s = "".join(ch for ch in s if unicodedata.category(ch) != "Mn")  # remove acentos
-    s = re.sub(r"[^a-z0-9\s]", " ", s)  # remove pontuação e símbolos
+    s = "".join(ch for ch in s if unicodedata.category(ch) != "Mn")
+    s = re.sub(r"^[0-9.\-\s]+", "", s)       # remove prefixos tipo '7.1 -'
+    s = re.sub(r"[^a-z0-9\s]", " ", s)       # remove pontuação
     s = re.sub(r"\s+", " ", s)
     return s.strip()
 
@@ -89,6 +92,13 @@ def regra_retido_por_tribo(tribo):
     return RETIDO_DICT.get(tribo, RETIDO_DICT["Web"])
 
 # ====================== FUNÇÕES DE LEITURA ======================
+def soma_kpi(df_scope, termos):
+    """Busca múltiplos termos possíveis dentro de NM_KPI_NORM"""
+    mask = False
+    for termo in termos:
+        mask |= df_scope["NM_KPI_NORM"].str.contains(termo, case=False, na=False)
+    return df_scope.loc[mask, "VOL_KPI"].sum()
+
 def get_volumes(df, segmento, subcanal, anomes):
     seg_key = normalize_text(segmento)
     sub_key = normalize_text(subcanal)
@@ -102,14 +112,9 @@ def get_volumes(df, segmento, subcanal, anomes):
     st.info(f"🔎 Linhas encontradas — Segmento: {segmento} | Subcanal: {subcanal} | ANOMES: {anomes}")
     st.dataframe(df_f[["ANOMES","SEGMENTO","NM_SUBCANAL","NM_KPI","VOL_KPI"]], use_container_width=True)
 
-    def soma_kpi(df_scope, termo):
-        """Busca substring dentro de NM_KPI_NORM."""
-        mask = df_scope["NM_KPI_NORM"].str.contains(termo, na=False)
-        return df_scope.loc[mask, "VOL_KPI"].sum()
-    vol_41 = soma_kpi(df_f, "usuarios_unicos_cpf")
-    vol_71 = soma_kpi(df_f, "transacoes")
-    
-    vol_6  = soma_kpi(df_f, "acessos")
+    vol_71 = soma_kpi(df_f, ["transacao", "transa", "7 1"])
+    vol_41 = soma_kpi(df_f, ["usuario unico", "cpf", "4 1"])
+    vol_6  = soma_kpi(df_f, ["acesso", "6 "])
 
     st.info(f"📊 Volumes → Transações: {vol_71} | Usuários Únicos CPF: {vol_41} | Acessos: {vol_6}")
     return float(vol_71), float(vol_41), float(vol_6)
@@ -169,7 +174,6 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     c5.metric("Volume de Acessos", fmt_int(vol_acessos))
     c6.metric("Volume de MAU (CPF)", fmt_int(mau_cpf))
 
-    # Diagnóstico detalhado
     with st.expander("🔍 Diagnóstico de Premissas", expanded=False):
         st.markdown(f"""
         **Segmento:** {segmento}  
@@ -188,5 +192,84 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         | % Retido Aplicado | {retido*100:.2f}% |
         """, unsafe_allow_html=True)
 
+    # =================== PARETO ===================
+    st.markdown("---")
+    st.markdown("### 📄 Simulação - Todos os Subcanais")
+    resultados = []
+    for sub in sorted(df.loc[df["SEGMENTO"] == segmento, "NM_SUBCANAL"].dropna().unique()):
+        df_i = df[
+            (df["SEGMENTO"] == segmento)
+            & (df["NM_SUBCANAL"] == sub)
+            & (df["ANOMES"] == anomes_escolhido)
+        ]
+        tribo_i = df_i["NM_TORRE"].dropna().unique().tolist()[0] if not df_i.empty else "Indefinido"
+        v71, v41, v6 = get_volumes(df, segmento, sub, anomes_escolhido)
+        tx_i = tx_trn_por_acesso(v71, v6)
+        tx_uu_i = tx_uu_por_cpf(v71, v41)
+        ret_i = regra_retido_por_tribo(tribo_i)
+        cr_i = CR_SEGMENTO.get(segmento, 0.50)
 
+        vol_acc_i = volume_trans / tx_i if tx_i > 0 else 0
+        mau_i = volume_trans / tx_uu_i if tx_uu_i > 0 else 0
+        est_i = np.floor((vol_acc_i * cr_i * ret_i) + 1e-9)
 
+        resultados.append({
+            "Subcanal": sub,
+            "Tribo": tribo_i,
+            "Tx Trans/Acessos": round(tx_i,2),
+            "Tx UU/CPF": round(tx_uu_i,2),
+            "% Retido": round(ret_i*100,2),
+            "% CR": round(cr_i*100,2),
+            "Volume Acessos": int(vol_acc_i),
+            "MAU (CPF)": int(mau_i),
+            "Volume CR Evitado": int(est_i)
+        })
+
+    df_lote = pd.DataFrame(resultados)
+    st.dataframe(df_lote, use_container_width=False)
+
+    # Pareto
+    st.markdown("### 🔎 Análise de Pareto - Potencial de Ganho")
+    df_p = df_lote.sort_values("Volume CR Evitado", ascending=False).reset_index(drop=True)
+    tot = df_p["Volume CR Evitado"].sum()
+    df_p["Acumulado"] = df_p["Volume CR Evitado"].cumsum()
+    df_p["Acumulado %"] = 100 * df_p["Acumulado"] / tot if tot > 0 else 0
+    df_p["Cor"] = np.where(df_p["Acumulado %"] <= 80, "crimson", "lightgray")
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(x=df_p["Subcanal"], y=df_p["Volume CR Evitado"],
+                         name="Volume CR Evitado", marker_color=df_p["Cor"]))
+    fig.add_trace(go.Scatter(x=df_p["Subcanal"], y=df_p["Acumulado %"],
+                             name="Acumulado %", mode="lines+markers",
+                             marker=dict(color="royalblue"), yaxis="y2"))
+    fig.update_layout(
+        title="📈 Pareto - Volume de CR Evitado",
+        xaxis=dict(title="Subcanais"),
+        yaxis=dict(title="Volume CR Evitado"),
+        yaxis2=dict(title="Acumulado %", overlaying="y", side="right", range=[0,100]),
+        legend=dict(x=0.7, y=1.15, orientation="h"),
+        bargap=0.2, margin=dict(l=10,r=10,t=60,b=80)
+    )
+    st.plotly_chart(fig, use_container_width=False)
+
+    df_top = df_p[df_p["Acumulado %"] <= 80]
+    st.markdown("### 🏆 Subcanais Prioritários (Top 80%)")
+    st.dataframe(df_top[["Subcanal","Tribo","Volume CR Evitado","Acumulado %"]],
+                 use_container_width=False)
+
+    total_ev = int(df_lote["Volume CR Evitado"].sum())
+    top_names = ", ".join(df_top["Subcanal"].tolist())
+    st.markdown(f"""**🧠 Insight Automático**  
+
+- Volume total estimado de **CR evitado**: **{fmt_int(total_ev)}**.  
+- **{len(df_top)} subcanais** concentram **80 %** do potencial: **{top_names}**.  
+- **Ação:** priorize estes subcanais para maximizar impacto.""")
+
+    # Download Excel
+    buffer = io.BytesIO()
+    with pd.ExcelWriter(buffer, engine="xlsxwriter") as w:
+        df_lote.to_excel(w, sheet_name="Resultados", index=False)
+        df_top.to_excel(w, sheet_name="Top_80_Pareto", index=False)
+    st.download_button("📥 Baixar Excel Completo", buffer.getvalue(),
+                       file_name="simulacao_cr.xlsx",
+                       mime="application/vnd.ms-excel")
