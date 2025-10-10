@@ -1,7 +1,6 @@
-# app_calculadora_ganhos.py — versão final (debug diagnóstico)
-# Exibe linhas filtradas e valores reais dos KPIs carregados.
-
-import io, base64
+# app_calculadora_ganhos.py — versão final (12/10/2025)
+# Correção definitiva: leitura de KPIs com acentos, hífens e espaços irregulares
+import io, base64, unicodedata, re
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -51,8 +50,19 @@ RETIDO_DICT = {"App":0.9169,"Bot":0.8835,"Web":0.9027}
 CR_SEGMENTO = {"Móvel":0.4947,"Residencial":0.4989}
 DEFAULT_TX_UU_CPF = 12.28
 
+# ====================== NORMALIZAÇÃO ======================
+def normalize_text(s):
+    if pd.isna(s):
+        return ""
+    s = str(s).lower().strip()
+    s = unicodedata.normalize("NFD", s)
+    s = "".join(ch for ch in s if unicodedata.category(ch) != "Mn")  # remove acentos
+    s = re.sub(r"[^a-z0-9\s]", " ", s)  # remove pontuação e símbolos
+    s = re.sub(r"\s+", " ", s)
+    return s.strip()
+
 # ====================== BASE ======================
-URL = "https://raw.githubusercontent.com/gustavo3-freitas/base_calculadora/main/Tabela_Performance_v2.xlsx"
+URL = "https://raw.githubusercontent.com/gustavo3-freitas/base_calculadora/main/Tabela_Performance.xlsx"
 
 @st.cache_data(show_spinner=True)
 def carregar_dados():
@@ -60,17 +70,18 @@ def carregar_dados():
     df = df[df["TP_META"].astype(str).str.lower().eq("real")].copy()
     df["VOL_KPI"] = pd.to_numeric(df["VOL_KPI"], errors="coerce").fillna(0)
     df["ANOMES"] = pd.to_numeric(df["ANOMES"], errors="coerce").astype(int)
-    df["NM_KPI"] = df["NM_KPI"].astype(str).str.strip().str.lower()
+    df["NM_KPI_NORM"] = df["NM_KPI"].map(normalize_text)
+    df["SEGMENTO_NORM"] = df["SEGMENTO"].map(normalize_text)
+    df["SUBCANAL_NORM"] = df["NM_SUBCANAL"].map(normalize_text)
+    df["TORRE_NORM"] = df["NM_TORRE"].map(normalize_text)
     return df
 
 df = carregar_dados()
 
 # ====================== HELPERS ======================
 def fmt_int(x):
-    try:
-        return f"{np.floor(float(x)+1e-9):,.0f}".replace(",", ".")
-    except:
-        return "0"
+    try: return f"{np.floor(float(x)+1e-9):,.0f}".replace(",", ".")
+    except: return "0"
 
 def regra_retido_por_tribo(tribo):
     if str(tribo).strip().lower() == "dma":
@@ -79,62 +90,52 @@ def regra_retido_por_tribo(tribo):
 
 # ====================== FUNÇÕES DE LEITURA ======================
 def get_volumes(df, segmento, subcanal, anomes):
-    """Retorna volumes de transacoes, usuarios_unicos_cpf e acessos com filtros exatos."""
+    seg_key = normalize_text(segmento)
+    sub_key = normalize_text(subcanal)
     df_f = df[
-        (df["SEGMENTO"] == segmento)
-        & (df["NM_SUBCANAL"] == subcanal)
-        & (df["ANOMES"] == anomes)
-        & (df["TP_META"].astype(str).str.lower() == "real")
+        (df["SEGMENTO_NORM"] == seg_key) &
+        (df["SUBCANAL_NORM"] == sub_key) &
+        (df["ANOMES"] == anomes)
     ].copy()
 
-    st.info(f"🔎 Linhas filtradas — Segmento: {segmento}, Subcanal: {subcanal}, ANOMES: {anomes}")
+    # Debug visual: linhas filtradas
+    st.info(f"🔎 Linhas encontradas — Segmento: {segmento} | Subcanal: {subcanal} | ANOMES: {anomes}")
     st.dataframe(df_f[["ANOMES","SEGMENTO","NM_SUBCANAL","NM_KPI","VOL_KPI"]], use_container_width=True)
 
-    vol_71 = df_f.loc[df_f["NM_KPI"] == "transacoes", "VOL_KPI"].sum()
-    vol_41 = df_f.loc[df_f["NM_KPI"] == "usuarios_unicos_cpf", "VOL_KPI"].sum()
-    vol_6  = df_f.loc[df_f["NM_KPI"] == "acessos", "VOL_KPI"].sum()
+    def soma_kpi(df_scope, termo):
+        """Busca substring dentro de NM_KPI_NORM."""
+        mask = df_scope["NM_KPI_NORM"].str.contains(termo, na=False)
+        return df_scope.loc[mask, "VOL_KPI"].sum()
 
-    st.info(f"📊 Volumes encontrados → Transações: {vol_71} | Usuários Únicos CPF: {vol_41} | Acessos: {vol_6}")
+    vol_71 = soma_kpi(df_f, "transacao")
+    vol_41 = soma_kpi(df_f, "usuario unico cpf")
+    vol_6  = soma_kpi(df_f, "acesso")
+
+    st.info(f"📊 Volumes → Transações: {vol_71} | Usuários Únicos CPF: {vol_41} | Acessos: {vol_6}")
     return float(vol_71), float(vol_41), float(vol_6)
 
 def tx_trn_por_acesso(vol_71, vol_6):
-    if vol_6 <= 0:
-        return 1.0
-    return max(vol_71 / vol_6, 1.0)
+    return max(vol_71 / vol_6, 1.0) if vol_6 > 0 else 1.0
 
 def tx_uu_por_cpf(vol_71, vol_41):
-    if vol_41 <= 0:
-        return DEFAULT_TX_UU_CPF
-    return vol_71 / vol_41
+    return vol_71 / vol_41 if vol_41 > 0 else DEFAULT_TX_UU_CPF
 
 # ====================== FILTROS ======================
 st.markdown("### 🔎 Filtros de Cenário")
 c1, c2, c3 = st.columns(3)
 segmentos = sorted(df["SEGMENTO"].dropna().unique().tolist())
 segmento = c1.selectbox("📊 Segmento", segmentos)
-
 anomes_unicos = sorted(df["ANOMES"].unique())
 meses_map = {1:"Jan",2:"Fev",3:"Mar",4:"Abr",5:"Mai",6:"Jun",7:"Jul",8:"Ago",9:"Set",10:"Out",11:"Nov",12:"Dez"}
 mes_legivel = [f"{meses_map[int(str(a)[4:]) ]}/{str(a)[:4]}" for a in anomes_unicos]
 map_anomes_legivel = dict(zip(mes_legivel, anomes_unicos))
 anomes_legivel = c2.selectbox("🗓️ Mês", mes_legivel, index=len(mes_legivel)-1)
 anomes_escolhido = map_anomes_legivel[anomes_legivel]
-
 subcanais = sorted(df.loc[df["SEGMENTO"] == segmento, "NM_SUBCANAL"].dropna().unique())
 subcanal = c3.selectbox("📌 Subcanal", subcanais)
 
-df_sub = df[
-    (df["SEGMENTO"] == segmento)
-    & (df["NM_SUBCANAL"] == subcanal)
-    & (df["ANOMES"] == anomes_escolhido)
-]
+df_sub = df[(df["SEGMENTO"] == segmento) & (df["NM_SUBCANAL"] == subcanal) & (df["ANOMES"] == anomes_escolhido)]
 tribo = df_sub["NM_TORRE"].dropna().unique().tolist()[0] if not df_sub.empty else "Indefinido"
-
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("Tribo", tribo)
-c2.metric("Canal", tribo)
-c3.metric("Segmento", segmento)
-c4.metric("Subcanal", subcanal)
 
 # ====================== INPUT ======================
 st.markdown("---")
@@ -154,20 +155,21 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     cr_evitado = vol_acessos * cr_segmento * retido
     cr_evitado_floor = np.floor(cr_evitado + 1e-9)
 
-    st.success(f"✅ Volumes lidos corretamente → Transações: {fmt_int(vol_71)} | Usuários Únicos CPF: {fmt_int(vol_41)} | Acessos: {fmt_int(vol_6)}")
+    st.success(f"✅ Volumes lidos → Transações: {fmt_int(vol_71)} | Usuários Únicos CPF: {fmt_int(vol_41)} | Acessos: {fmt_int(vol_6)}")
 
     # Resultados
     st.markdown("---")
     st.markdown("### 📊 Resultados Detalhados (Fórmulas)")
-    c1, c2, c3 = st.columns(3)
+    c1,c2,c3 = st.columns(3)
     c1.metric("Volume de Transações", fmt_int(volume_trans))
     c2.metric("Taxa Transação × Acesso", f"{tx_trn_acc:.2f}")
     c3.metric("% Ligação Direcionada Humano", f"{cr_segmento*100:.2f}%")
-    c4, c5, c6 = st.columns(3)
+    c4,c5,c6 = st.columns(3)
     c4.metric("Retido Digital 72h", f"{retido*100:.2f}%")
     c5.metric("Volume de Acessos", fmt_int(vol_acessos))
     c6.metric("Volume de MAU (CPF)", fmt_int(mau_cpf))
 
+    # Diagnóstico detalhado
     with st.expander("🔍 Diagnóstico de Premissas", expanded=False):
         st.markdown(f"""
         **Segmento:** {segmento}  
