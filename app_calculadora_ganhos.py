@@ -1,4 +1,4 @@
-# app_calculadora_ganhos.py — versão final (corrigida: 4.1 - Usuários Únicos (CPF))
+# app_calculadora_ganhos.py — versão final (corrigida e validada com 7.1 e 4.1)
 import io, base64
 from pathlib import Path
 import numpy as np, pandas as pd, plotly.graph_objects as go, streamlit as st
@@ -52,7 +52,7 @@ def carregar_dados():
     df = pd.read_excel(URL, sheet_name="Tabela Performance")
     df = df[df["TP_META"].astype(str).str.lower().eq("real")]
     df["VOL_KPI"] = pd.to_numeric(df["VOL_KPI"], errors="coerce")
-    df["ANOMES"] = df["ANOMES"].astype(int)
+    df["ANOMES"] = pd.to_numeric(df["ANOMES"], errors="coerce").astype(int)
     return df
 df = carregar_dados()
 
@@ -82,18 +82,34 @@ def regra_retido_por_tribo(tribo):
     return RETIDO_DICT.get(tribo,RETIDO_DICT["Web"])
 
 def tx_uu_cpf_dyn(df_all, segmento, subcanal, anomes, tribo):
-    """Aplica filtros exatos (ANOMES, SEGMENTO, NM_SUBCANAL, NM_TORRE) e usa 4.1 - Usuários Únicos (CPF)"""
+    """
+    Busca exata dos KPIs:
+    7.1 - Transações
+    4.1 - Usuários Únicos (CPF)
+    """
     df_filt = df_all[
-        (df_all["TP_META"].str.lower() == "real") &
+        (df_all["TP_META"].astype(str).str.lower() == "real") &
         (df_all["ANOMES"] == anomes) &
         (df_all["SEGMENTO"] == segmento) &
         (df_all["NM_SUBCANAL"] == subcanal) &
         (df_all["NM_TORRE"] == tribo)
-    ]
+    ].copy()
 
-    vt = sum_kpi(df_filt,[r"7\.1\s*-\s*Transa","Transações"])
-    # leitura corrigida: 4.1 - Usuários Únicos (CPF)
-    vu = sum_kpi(df_filt,[r"4\.1\s*-\s*Usuários Únicos \(CPF\)"])
+    if df_filt.empty:
+        return (DEFAULT_TX_UU_CPF, 0.0, 0.0, "Fallback", anomes)
+
+    df_filt["NM_KPI_LIMPO"] = df_filt["NM_KPI"].str.strip().str.lower()
+    vt = df_filt.loc[
+        df_filt["NM_KPI_LIMPO"].str.contains("7.1") &
+        df_filt["NM_KPI_LIMPO"].str.contains("transa"),
+        "VOL_KPI"
+    ].sum()
+    vu = df_filt.loc[
+        df_filt["NM_KPI_LIMPO"].str.contains("4.1") &
+        df_filt["NM_KPI_LIMPO"].str.contains("cpf"),
+        "VOL_KPI"
+    ].sum()
+
     if vt>0 and vu>0:
         return (vt/vu, vt, vu, "NM_SUBCANAL", anomes)
     else:
