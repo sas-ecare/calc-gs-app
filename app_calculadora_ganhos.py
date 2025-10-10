@@ -83,7 +83,7 @@ def get_volumes(df, segmento, subcanal, anomes):
         (df["SEGMENTO"] == segmento) &
         (df["NM_SUBCANAL"] == subcanal) &
         (df["ANOMES"] == anomes) &
-        (df["TP_META"].astype(str).str.lower() == "real")
+        (df["TP_META"].astype(str).str.lower() == "Real")
     ]
 
     vol_71 = df_f.loc[
@@ -93,9 +93,7 @@ def get_volumes(df, segmento, subcanal, anomes):
     ].sum()
 
     vol_41 = df_f.loc[
-        df_f["NM_KPI"].str.contains("4.1 - Usuários Únicos (CPF)", case=True, na=True) |
-        df_f["NM_KPI"].str.contains("4.1 - Usuários Únicos (CPF)", case=False, na=False) &
-        df_f["NM_KPI"].str.contains("CPF", case=False, na=False),
+        df_f["NM_KPI"].str.contains("4", case=False, na=True),
         "VOL_KPI"
     ].sum()
 
@@ -295,6 +293,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     st.download_button("📥 Baixar Excel Completo", buffer.getvalue(),
                        file_name="simulacao_cr.xlsx",
                        mime="application/vnd.ms-excel")
+
 
 
 
