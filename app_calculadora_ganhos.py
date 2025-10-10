@@ -1,4 +1,4 @@
-# app_calculadora_ganhos.py — versão final (corrigida e validada com 7.1 e 4.1)
+# app_calculadora_ganhos.py — versão final com TX_UU_CPF esperada no diagnóstico
 import io, base64
 from pathlib import Path
 import numpy as np, pandas as pd, plotly.graph_objects as go, streamlit as st
@@ -96,7 +96,7 @@ def tx_uu_cpf_dyn(df_all, segmento, subcanal, anomes, tribo):
     ].copy()
 
     if df_filt.empty:
-        return (DEFAULT_TX_UU_CPF, 0.0, 0.0, "Fallback", anomes)
+        return (DEFAULT_TX_UU_CPF, 0.0, 0.0, "Fallback", anomes, 0.0)
 
     df_filt["NM_KPI_LIMPO"] = df_filt["NM_KPI"].str.strip().str.lower()
     vt = df_filt.loc[
@@ -111,9 +111,10 @@ def tx_uu_cpf_dyn(df_all, segmento, subcanal, anomes, tribo):
     ].sum()
 
     if vt>0 and vu>0:
-        return (vt/vu, vt, vu, "NM_SUBCANAL", anomes)
+        tx_calc = vt/vu
+        return (tx_calc, vt, vu, "NM_SUBCANAL", anomes, tx_calc)
     else:
-        return (DEFAULT_TX_UU_CPF, vt, vu, "Fallback", anomes)
+        return (DEFAULT_TX_UU_CPF, vt, vu, "Fallback", anomes, 0.0)
 
 # ====================== FILTROS ======================
 st.markdown("### 🔎 Filtros de Cenário")
@@ -156,7 +157,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     retido = regra_retido_por_tribo(tribo)
     vol_acessos = volume_trans/tx_trn_acc
 
-    tx_uu_cpf, vol_trn_real, vol_user_real, origem_tx, anomes_usado = tx_uu_cpf_dyn(df,segmento,subcanal,anomes_escolhido,tribo)
+    tx_uu_cpf, vol_trn_real, vol_user_real, origem_tx, anomes_usado, tx_calc_real = tx_uu_cpf_dyn(df,segmento,subcanal,anomes_escolhido,tribo)
     mau_cpf = volume_trans/(tx_uu_cpf if tx_uu_cpf>0 else DEFAULT_TX_UU_CPF)
     vol_lig_ev_hum = (volume_trans/tx_trn_acc)*cr_segmento*retido
 
@@ -184,7 +185,8 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         |------|-------:|
         | Volume Transações (7.1) | {fmt_int(vol_trn_real)} |
         | Volume Usuários Únicos (4.1 - CPF) | {fmt_int(vol_user_real)} |
-        | TX_UU_CPF Calculado | {tx_uu_cpf:.2f} |
+        | TX_UU_CPF Calculada (Trans/Usuários) | {tx_calc_real:.2f} |
+        | TX_UU_CPF Usada no cálculo | {tx_uu_cpf:.2f} |
         | Origem | {origem_tx} |
         | CR Segmento | {cr_segmento*100:.2f}% |
         | % Retido Aplicado | {retido*100:.2f}% |
@@ -213,7 +215,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         df_i=df[(df["SEGMENTO"]==segmento)&(df["NM_SUBCANAL"]==sub)&(df["TP_META"].str.lower()=="real")]
         tribo_i=df_i["NM_TORRE"].dropna().unique().tolist()[0] if not df_i.empty else "Indefinido"
         tx_i=tx_trn_por_acesso(df_i)
-        tx_uu_i,_,_,_,_=tx_uu_cpf_dyn(df,segmento,sub,anomes_escolhido,tribo_i)
+        tx_uu_i,_,_,_,_,_=tx_uu_cpf_dyn(df,segmento,sub,anomes_escolhido,tribo_i)
         ret_i=regra_retido_por_tribo(tribo_i)
         cr_seg_i=CR_SEGMENTO.get(segmento,0.50)
         vol_acc_i=volume_trans/tx_i
