@@ -1,5 +1,5 @@
 # app_calculadora_ganhos.py — versão final (14/10/2025)
-# Produção: leitura limpa da base Tabela_Performance_v2.xlsx, sem debug e com cache limpo.
+# Correção definitiva: leitura da base no GitHub + fallback de upload manual + Pareto e Excel
 
 import io, base64, unicodedata, re
 from pathlib import Path
@@ -65,13 +65,24 @@ def normalize_text(s):
     return s.strip()
 
 # ====================== BASE ======================
-URL = "https://raw.githubusercontent.com/gustavo3-freitas/base_calculadora/main/Tabela_Performance_v2.xlsx"
+URL = "https://raw.githubusercontent.com/gustavo3-freitas/calculadora-ganhos-claro/main/base/Tabela_Performance_v2.xlsx"
 
-
+st.cache_data.clear()  # limpa cache sempre que roda
 
 @st.cache_data(show_spinner=True)
 def carregar_dados():
-    df = pd.read_excel(URL, sheet_name="Tabela Performance")
+    try:
+        df = pd.read_excel(URL, sheet_name="Tabela Performance")
+        st.success("✅ Base carregada com sucesso do GitHub.")
+    except Exception:
+        st.warning("⚠️ Não foi possível carregar do GitHub. Faça upload manual abaixo.")
+        uploaded = st.file_uploader("📄 Envie a planilha Tabela_Performance_v2.xlsx", type=["xlsx"])
+        if uploaded is not None:
+            df = pd.read_excel(uploaded, sheet_name="Tabela Performance")
+            st.success("✅ Base carregada com sucesso via upload manual.")
+        else:
+            st.stop()
+
     df = df[df["TP_META"].astype(str).str.lower().eq("real")].copy()
     df["VOL_KPI"] = pd.to_numeric(df["VOL_KPI"], errors="coerce").fillna(0)
     df["ANOMES"] = pd.to_numeric(df["ANOMES"], errors="coerce").astype(int)
@@ -154,8 +165,6 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     mau_cpf = volume_trans / tx_uu_cpf if tx_uu_cpf > 0 else 0
     cr_evitado = vol_acessos * cr_segmento * retido
     cr_evitado_floor = np.floor(cr_evitado + 1e-9)
-
-    st.success(f"✅ Volumes lidos → Transações: {fmt_int(vol_71)} | Usuários Únicos CPF: {fmt_int(vol_41)} | Acessos: {fmt_int(vol_6)}")
 
     # Resultados
     st.markdown("---")
@@ -268,4 +277,3 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     st.download_button("📥 Baixar Excel Completo", buffer.getvalue(),
                        file_name="simulacao_cr.xlsx",
                        mime="application/vnd.ms-excel")
-
