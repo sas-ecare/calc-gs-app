@@ -281,7 +281,8 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     top_names = ", ".join(df_top["Subcanal"].tolist())
     st.markdown(f"""**🧠 INSIGHTS:**  
 
-- Nesta simulação,  **{len(df_top)} subcanais** concentram **80 %** do potencial: **{top_names}**.  
+- Nesta simulação,  **{len(df_top)} subcanais** concentram **80 %** do potencial: 
+- {top_names}.  
 - **AÇÃO:** priorize estes subcanais para maximizar impacto.""")
 
     # Download Excel
@@ -292,6 +293,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     st.download_button("📥 Baixar Excel Completo", buffer.getvalue(),
                        file_name="simulacao_cr.xlsx",
                        mime="application/vnd.ms-excel")
+
 
 
 
