@@ -66,7 +66,7 @@ def normalize_text(s):
 
 # ====================== BASE ======================
 URL = "https://raw.githubusercontent.com/gustavo3-freitas/base_calculadora/main/Tabela_Performance_v2.xlsx"
-
+st.cache_data.clear()
 @st.cache_data(show_spinner=True)
 def carregar_dados():
     df = pd.read_excel(URL, sheet_name="Tabela Performance")
@@ -273,3 +273,4 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     st.download_button("📥 Baixar Excel Completo", buffer.getvalue(),
                        file_name="simulacao_cr.xlsx",
                        mime="application/vnd.ms-excel")
+
