@@ -1,4 +1,4 @@
-# app_calculadora_ganhos.py — versão final (corrigida TX_UU_CPF via Subcanal1)
+# app_calculadora_ganhos.py — versão final (NM_SUBCANAL oficial)
 import io, base64
 from pathlib import Path
 import numpy as np, pandas as pd, plotly.graph_objects as go, streamlit as st
@@ -20,7 +20,7 @@ def check_password():
         st.stop()
 check_password()
 
-# ====================== LOGO / TÍTULO ======================
+# ====================== LOGO ======================
 def _find_asset_bytes(name_candidates):
     for d in [Path.cwd(), Path.cwd()/ "assets", Path.cwd()/ "static"]:
         for base in name_candidates:
@@ -47,7 +47,6 @@ DEFAULT_TX_UU_CPF = 12.28
 
 # ====================== BASE ======================
 URL = "https://raw.githubusercontent.com/gustavo3-freitas/base_calculadora/main/Tabela_Performance.xlsx"
-
 @st.cache_data(show_spinner=True)
 def carregar_dados():
     df = pd.read_excel(URL, sheet_name="Tabela Performance")
@@ -84,34 +83,21 @@ def regra_retido_por_tribo(tribo):
     return RETIDO_DICT.get(tribo,RETIDO_DICT["Web"])
 
 def tx_uu_cpf_dyn(df_all, segmento, subcanal, anomes):
-    """
-    Calcula TX_UU/CPF (Transações ÷ Usuários Únicos)
-    Priorizando Subcanal1 -> NM_SUBCANAL -> Segmento -> Fallback.
-    """
+    """ Calcula TX_UU/CPF no NM_SUBCANAL e ANOMES informados """
     df_mes = df_all[(df_all["SEGMENTO"]==segmento) & (df_all["ANOMES"]==anomes)]
-
-    # 1️⃣ - Subcanal1 (prioritário)
-    if "Subcanal1" in df_mes.columns:
-        df_sub1 = df_mes[df_mes["Subcanal1"]==subcanal]
-        vt = sum_kpi(df_sub1,[r"7\.1","Transa"])
-        vu = sum_kpi(df_sub1,[r"4\.1","Usuár","Únic","CPF"])
-        if vt>0 and vu>0:
-            return (vt/vu, vt, vu, "Subcanal1", anomes)
-
-    # 2️⃣ - NM_SUBCANAL
     df_sub = df_mes[df_mes["NM_SUBCANAL"]==subcanal]
+
     vt = sum_kpi(df_sub,[r"7\.1","Transa"])
     vu = sum_kpi(df_sub,[r"4\.1","Usuár","Únic","CPF"])
     if vt>0 and vu>0:
         return (vt/vu, vt, vu, "NM_SUBCANAL", anomes)
 
-    # 3️⃣ - Segmento
-    vt = sum_kpi(df_mes,[r"7\.1","Transa"])
-    vu = sum_kpi(df_mes,[r"4\.1","Usuár","Únic","CPF"])
-    if vt>0 and vu>0:
-        return (vt/vu, vt, vu, "Segmento", anomes)
+    # fallback para nível de segmento
+    vt_seg = sum_kpi(df_mes,[r"7\.1","Transa"])
+    vu_seg = sum_kpi(df_mes,[r"4\.1","Usuár","Únic","CPF"])
+    if vt_seg>0 and vu_seg>0:
+        return (vt_seg/vu_seg, vt_seg, vu_seg, "Segmento", anomes)
 
-    # 4️⃣ - Fallback
     return (DEFAULT_TX_UU_CPF, 0, 0, "Fallback", anomes)
 
 # ====================== FILTROS ======================
@@ -120,7 +106,6 @@ c1,c2,c3 = st.columns(3)
 segmentos = sorted(df["SEGMENTO"].dropna().unique().tolist())
 segmento = c1.selectbox("📊 Segmento", segmentos)
 
-# ANOMES formatado
 anomes_unicos = sorted(df["ANOMES"].unique())
 meses_map = {1:"Jan",2:"Fev",3:"Mar",4:"Abr",5:"Mai",6:"Jun",7:"Jul",8:"Ago",9:"Set",10:"Out",11:"Nov",12:"Dez"}
 mes_legivel = [f"{meses_map[int(str(a)[4:]) ]}/{str(a)[:4]}" for a in anomes_unicos]
@@ -128,10 +113,10 @@ map_anomes_legivel = dict(zip(mes_legivel, anomes_unicos))
 anomes_legivel = c2.selectbox("🗓️ Mês", mes_legivel, index=len(mes_legivel)-1)
 anomes_escolhido = map_anomes_legivel[anomes_legivel]
 
-subcanais = sorted(df.loc[df["SEGMENTO"]==segmento,"Subcanal1"].dropna().unique())
+subcanais = sorted(df.loc[df["SEGMENTO"]==segmento,"NM_SUBCANAL"].dropna().unique())
 subcanal = c3.selectbox("📌 Subcanal", subcanais)
 
-df_sub = df[(df["SEGMENTO"]==segmento)&(df["Subcanal1"]==subcanal)&(df["ANOMES"]==anomes_escolhido)]
+df_sub = df[(df["SEGMENTO"]==segmento)&(df["NM_SUBCANAL"]==subcanal)&(df["ANOMES"]==anomes_escolhido)]
 tribo = df_sub["NM_TORRE"].dropna().unique().tolist()[0] if not df_sub.empty else "Indefinido"
 
 k1,k2,k3,k4 = st.columns(4)
@@ -178,7 +163,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         **Segmento:** {segmento}  
         **Subcanal:** {subcanal}  
         **Tribo:** {tribo}  
-        **ANOMES usado:** {anomes_usado}
+        **ANOMES usado:** {anomes_usado}  
 
         | Item | Valor |
         |------|-------:|
@@ -202,4 +187,4 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         padding:6px 16px;border-radius:12px;line-height:1">{fmt_int(vol_lig_ev_hum)}</div>
         </div></div>""", unsafe_allow_html=True)
 
-    st.caption("Fórmulas: Acessos = Transações ÷ (Tx Transações/Acesso).  MAU = Transações ÷ (Transações/Usuários no Subcanal1 e ANOMES selecionado).  CR Evitado = Acessos × CR × %Retido.")
+    st.caption("Fórmulas: Acessos = Transações ÷ (Tx Transações/Acesso).  MAU = Transações ÷ (Transações/Usuários no NM_SUBCANAL e ANOMES selecionado).  CR Evitado = Acessos × CR × %Retido.")
