@@ -106,9 +106,9 @@ def get_volumes(df, segmento, subcanal, anomes):
         """Busca substring dentro de NM_KPI_NORM."""
         mask = df_scope["NM_KPI_NORM"].str.contains(termo, na=False)
         return df_scope.loc[mask, "VOL_KPI"].sum()
-
-    vol_71 = soma_kpi(df_f, "transacoes")
     vol_41 = soma_kpi(df_f, "usuarios_unicos_cpf")
+    vol_71 = soma_kpi(df_f, "transacoes")
+    
     vol_6  = soma_kpi(df_f, "acessos")
 
     st.info(f"📊 Volumes → Transações: {vol_71} | Usuários Únicos CPF: {vol_41} | Acessos: {vol_6}")
@@ -187,5 +187,6 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         | CR Segmento | {cr_segmento*100:.2f}% |
         | % Retido Aplicado | {retido*100:.2f}% |
         """, unsafe_allow_html=True)
+
 
 
