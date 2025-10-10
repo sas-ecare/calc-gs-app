@@ -286,29 +286,22 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         f"""
     - Nesta simulação, **{len(df_top)} subcanais** representam **80%** do potencial.
     - **AÇÃO:** priorize estes subcanais para maximizar impacto.
-    - **Top 80%:** {top_names}
             """
         )
     
      # Atenção ao nome exato das colunas (ajuste caso o seu df use outro nome)
-    st.dataframe(
-    df_top[["Subcanal", "Tribo", "Volume de CR Evitado", "Acumulado %"]],
-            use_container_width=True)
+    st.dataframe(df_top[["Subcanal", "Tribo", "Volume de CR Evitado", "Acumulado %"]],
+                 use_container_width=False)
     
     # ---------------------------
-    # Download Excel
-    # ---------------------------
+    # Download
     buffer = io.BytesIO()
     with pd.ExcelWriter(buffer, engine="xlsxwriter") as w:
         df_lote.to_excel(w, sheet_name="Resultados", index=False)
         df_top.to_excel(w, sheet_name="Top_80_Pareto", index=False)
-    
-    # Se usar buffer.getvalue(), não precisa de seek(0)
-    st.download_button(
-        "📥 Baixar Excel Completo",
-        data=buffer.getvalue(),
-        file_name="simulacao_cr.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+    st.download_button("📥 Baixar Excel Completo", buffer.getvalue(),
+                       file_name="simulacao_cr.xlsx",
+                       mime="application/vnd.ms-excel")
+
 
 
