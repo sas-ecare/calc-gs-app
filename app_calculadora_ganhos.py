@@ -1,5 +1,5 @@
 # app_calculadora_ganhos.py — versão final (14/10/2025)
-# Correção definitiva: leitura da base no GitHub + fallback de upload manual + Pareto e Excel
+
 
 import io, base64, unicodedata, re
 from pathlib import Path
@@ -73,7 +73,6 @@ st.cache_data.clear()  # limpa cache sempre que roda
 def carregar_dados():
     try:
         df = pd.read_excel(URL, sheet_name="Tabela Performance")
-        st.success("✅ Base carregada com sucesso do GitHub.")
     except Exception:
         st.warning("⚠️ Não foi possível carregar do GitHub. Faça upload manual abaixo.")
         uploaded = st.file_uploader("📄 Envie a planilha Tabela_Performance_v2.xlsx", type=["xlsx"])
@@ -135,23 +134,23 @@ def tx_uu_por_cpf(vol_71, vol_41):
 st.markdown("### 🔎 Filtros de Cenário")
 c1, c2, c3 = st.columns(3)
 segmentos = sorted(df["SEGMENTO"].dropna().unique().tolist())
-segmento = c1.selectbox("📊 Segmento", segmentos)
+segmento = c1.selectbox("📊 SEGMENTO", segmentos)
 anomes_unicos = sorted(df["ANOMES"].unique())
 meses_map = {1:"Jan",2:"Fev",3:"Mar",4:"Abr",5:"Mai",6:"Jun",7:"Jul",8:"Ago",9:"Set",10:"Out",11:"Nov",12:"Dez"}
 mes_legivel = [f"{meses_map[int(str(a)[4:]) ]}/{str(a)[:4]}" for a in anomes_unicos]
 map_anomes_legivel = dict(zip(mes_legivel, anomes_unicos))
-anomes_legivel = c2.selectbox("🗓️ Mês", mes_legivel, index=len(mes_legivel)-1)
+anomes_legivel = c2.selectbox("🗓️ MÊS", mes_legivel, index=len(mes_legivel)-1)
 anomes_escolhido = map_anomes_legivel[anomes_legivel]
 subcanais = sorted(df.loc[df["SEGMENTO"] == segmento, "NM_SUBCANAL"].dropna().unique())
-subcanal = c3.selectbox("📌 Subcanal", subcanais)
+subcanal = c3.selectbox("📌 SUBCANAL", subcanais)
 
 df_sub = df[(df["SEGMENTO"] == segmento) & (df["NM_SUBCANAL"] == subcanal) & (df["ANOMES"] == anomes_escolhido)]
 tribo = df_sub["NM_TORRE"].dropna().unique().tolist()[0] if not df_sub.empty else "Indefinido"
 
 # ====================== INPUT ======================
 st.markdown("---")
-st.markdown("### ➗ Parâmetros de Simulação")
-volume_trans = st.number_input("📥 Volume de Transações", min_value=0, value=10_000, step=1000)
+
+volume_trans = st.number_input("📥 VOLUME DE TRANSAÇÕES ESPERADO", min_value=0, value=1_000, step=1000)
 
 # ====================== CÁLCULOS ======================
 if st.button("🚀 Calcular Ganhos Potenciais"):
@@ -168,15 +167,15 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
 
     # Resultados
     st.markdown("---")
-    st.markdown("### 📊 Resultados Detalhados (Fórmulas)")
+    st.markdown("### 📊 ResultadoS")
     c1,c2,c3 = st.columns(3)
-    c1.metric("Volume de Transações", fmt_int(volume_trans))
-    c2.metric("Taxa Transação × Acesso", f"{tx_trn_acc:.2f}")
-    c3.metric("% Ligação Direcionada Humano", f"{cr_segmento*100:.2f}%")
+    c1.metric("VOLUME DE TRANSAÇÕES", fmt_int(volume_trans))
+    c2.metric("TAXA TRANSAÇÃO × ACESSO", f"{tx_trn_acc:.2f}")
+    c3.metric("% LIGAÇÃO DIRECIONADA HUMANO", f"{cr_segmento*100:.2f}%")
     c4,c5,c6 = st.columns(3)
-    c4.metric("Retido Digital 72h", f"{retido*100:.2f}%")
-    c5.metric("Volume de Acessos", fmt_int(vol_acessos))
-    c6.metric("Volume de MAU (CPF)", fmt_int(mau_cpf))
+    c4.metric("RETIDO DIGITAL 72H", f"{retido*100:.2f}%")
+    c5.metric("VOLUME DE ACESSOS", fmt_int(vol_acessos))
+    c6.metric("VOLUME DE MAU (CPF)", fmt_int(mau_cpf))
 
     with st.expander("🔍 Diagnóstico de Premissas", expanded=False):
         st.markdown(f"""
@@ -265,7 +264,6 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     top_names = ", ".join(df_top["Subcanal"].tolist())
     st.markdown(f"""**🧠 Insight Automático**  
 
-- Volume total estimado de **CR evitado**: **{fmt_int(total_ev)}**.  
 - **{len(df_top)} subcanais** concentram **80 %** do potencial: **{top_names}**.  
 - **Ação:** priorize estes subcanais para maximizar impacto.""")
 
@@ -277,3 +275,4 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     st.download_button("📥 Baixar Excel Completo", buffer.getvalue(),
                        file_name="simulacao_cr.xlsx",
                        mime="application/vnd.ms-excel")
+
