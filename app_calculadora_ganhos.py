@@ -285,8 +285,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         top_names = ", ".join(df_top["Subcanal"].astype(str).tolist())
         st.markdown(f"""
         - Nesta simulação, **{len(df_top)} subcanais** representam **80%** do potencial.  
-        - **AÇÃO:** priorize estes subcanais para maximizar impacto.  
-        - **Subcanais prioritários:** {top_names}
+        - **AÇÃO:** priorize estes subcanais para maximizar impacto.
         """)
 
         # Exibe dataframe com colunas disponíveis
@@ -313,3 +312,4 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
