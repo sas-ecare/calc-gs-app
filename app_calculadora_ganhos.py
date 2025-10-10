@@ -94,23 +94,23 @@ def get_volumes(df, segmento, subcanal, anomes):
     ].copy()
 
     # Normaliza textos
-    df_f["NM_KPI_NORM"] = df_f["NM_KPI"].map(normalizar_texto)
-
-    vol_71 = df_f.loc[
-        df_f["NM_KPI_NORM"].str.contains(r"7\.1") &
-        df_f["NM_KPI_NORM"].str.contains("transa"),
+     vol_71 = df_f.loc[
+        df_f["NM_KPI"].str.contains(r"7\.1") &
+        df_f["NM_KPI"].str.contains("transa"),
         "VOL_KPI"
     ].sum()
 
     vol_41 = df_f.loc[
-        df_f["NM_KPI_NORM"].str.contains(r"4\.1") &
-        df_f["NM_KPI_NORM"].str.contains("cpf"),
+        df_f["ANOMES"].astype(int).eq(202508) &
+        df["NM_KPI"].str.contains(pat_41, regex=True, na=False) &
+        df["NM_KPI"].str.contains("usuarios unicos", na=False) &
+        df["NM_KPI"].str.contains("cpf", na=False),
         "VOL_KPI"
     ].sum()
 
     vol_6 = df_f.loc[
-        df_f["NM_KPI_NORM"].str.contains(r"\b6\b") &
-        df_f["NM_KPI_NORM"].str.contains("acesso"),
+        df_f["NM_KPI"].str.contains(r"\b6\b") &
+        df_f["NM_KPI"].str.contains("acesso"),
         "VOL_KPI"
     ].sum()
 
@@ -299,3 +299,4 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     st.download_button("📥 Baixar Excel Completo", buffer.getvalue(),
                        file_name="simulacao_cr.xlsx",
                        mime="application/vnd.ms-excel")
+
