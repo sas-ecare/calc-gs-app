@@ -272,37 +272,42 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     )
     st.plotly_chart(fig, use_container_width=False)
 
-    df_top = df_p[df_p["Acumulado %"] <= 80]
+    # Top 80%
+    df_top = df_p[df_p["Acumulado %"] <= 80].copy()
+
     st.markdown("### 🧠 Insights")
-    st.markdown(f"""**🏆 Subcanais Prioritários (Top 80%)**)
-    top_names = ", ".join(df_top["Subcanal"].tolist())
-    st.markdown(f"""
-    - Nesta simulação,  **{len(df_top)} subcanais** representam **80 %** do potencial:
-    - **AÇÃO:** priorize estes subcanais para maximizar impacto.""")
-    st.dataframe(df_top[["Subcanal","Tribo","Volume CR Evitado","Acumulado %"]],
-                 use_container_width=False)
+    st.markdown("**🏆 Subcanais Prioritários (Top 80%)**")
 
- 
-   
-
+    if df_top.empty:
+        st.info("Não há subcanais no Top 80% para o cenário selecionado.")
+    else:
+    top_names = ", ".join(df_top["Subcanal"].astype(str).tolist())
+    st.markdown(
+        f"""
+    - Nesta simulação, **{len(df_top)} subcanais** representam **80%** do potencial.
+    - **AÇÃO:** priorize estes subcanais para maximizar impacto.
+    - **Top 80%:** {top_names}
+            """
+        )
+    
+        # Atenção ao nome exato das colunas (ajuste caso o seu df use outro nome)
+        st.dataframe(
+            df_top[["Subcanal", "Tribo", "Volume de CR Evitado", "Acumulado %"]],
+            use_container_width=True
+        )
+    
+    # ---------------------------
     # Download Excel
+    # ---------------------------
     buffer = io.BytesIO()
     with pd.ExcelWriter(buffer, engine="xlsxwriter") as w:
         df_lote.to_excel(w, sheet_name="Resultados", index=False)
         df_top.to_excel(w, sheet_name="Top_80_Pareto", index=False)
-    st.download_button("📥 Baixar Excel Completo", buffer.getvalue(),
-                       file_name="simulacao_cr.xlsx",
-                       mime="application/vnd.ms-excel")
-
-
-
-
-
-
-
-
-
-
-
-
-
+    
+    # Se usar buffer.getvalue(), não precisa de seek(0)
+    st.download_button(
+        "📥 Baixar Excel Completo",
+        data=buffer.getvalue(),
+        file_name="simulacao_cr.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
