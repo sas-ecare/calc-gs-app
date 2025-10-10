@@ -290,11 +290,10 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
             """
         )
     
-        # Atenção ao nome exato das colunas (ajuste caso o seu df use outro nome)
-        st.dataframe(
-            df_top[["Subcanal", "Tribo", "Volume de CR Evitado", "Acumulado %"]],
-            use_container_width=True
-        )
+     # Atenção ao nome exato das colunas (ajuste caso o seu df use outro nome)
+    st.dataframe(
+    df_top[["Subcanal", "Tribo", "Volume de CR Evitado", "Acumulado %"]],
+            use_container_width=True)
     
     # ---------------------------
     # Download Excel
@@ -311,4 +310,5 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
 
