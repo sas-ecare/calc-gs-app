@@ -62,7 +62,7 @@ def normalize_text(s):
     return s.strip()
 
 # ====================== BASE ======================
-URL = "https://raw.githubusercontent.com/gustavo3-freitas/base_calculadora/main/Tabela_Performance.xlsx"
+URL = "https://raw.githubusercontent.com/gustavo3-freitas/base_calculadora/main/Tabela_Performance_v2.xlsx"
 
 @st.cache_data(show_spinner=True)
 def carregar_dados():
@@ -187,3 +187,4 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         | CR Segmento | {cr_segmento*100:.2f}% |
         | % Retido Aplicado | {retido*100:.2f}% |
         """, unsafe_allow_html=True)
+
