@@ -281,7 +281,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     if df_top.empty:
         st.info("Não há subcanais no Top 80% para o cenário selecionado.")
     else:
-    top_names = ", ".join(df_top["Subcanal"].astype(str).tolist())
+        top_names = ", ".join(df_top["Subcanal"].astype(str).tolist())
     st.markdown(
         f"""
     - Nesta simulação, **{len(df_top)} subcanais** representam **80%** do potencial.
@@ -311,3 +311,4 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
