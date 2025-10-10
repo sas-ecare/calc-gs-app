@@ -1,7 +1,7 @@
-# app_calculadora_ganhos.py — versão final (10/10/2025)
-# Correção completa: leitura precisa 7.1 / 4.1-CPF, diagnóstico detalhado, Pareto e exportação Excel.
+# app_calculadora_ganhos.py — versão final (11/10/2025)
+# Correção final: leitura precisa e robusta de 7.1 / 4.1 (CPF) / 6, Pareto e Excel.
 
-import io, base64
+import io, base64, re, unicodedata
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -76,46 +76,51 @@ def regra_retido_por_tribo(tribo):
         return RETIDO_DICT["Bot"]
     return RETIDO_DICT.get(tribo, RETIDO_DICT["Web"])
 
-# ====================== FUNÇÕES DE LEITURA ======================
+def normalizar_texto(s):
+    if pd.isna(s): return ""
+    s = str(s)
+    s = unicodedata.normalize("NFD", s)
+    s = "".join(ch for ch in s if unicodedata.category(ch) != "Mn")
+    return s.lower().strip()
+
+# ====================== FUNÇÃO ROBUSTA DE LEITURA ======================
 def get_volumes(df, segmento, subcanal, anomes):
-    """Retorna volumes de 7.1 (Transações), 4.1 (CPF) e 6 (Acessos) com filtros exatos."""
+    """Lê volumes de 7.1 (Transações), 4.1 (CPF) e 6 (Acessos) com regex robusto e texto normalizado."""
     df_f = df[
-        (df["SEGMENTO"] == segmento) &
-        (df["NM_SUBCANAL"] == subcanal) &
-        (df["ANOMES"] == anomes) &
-        (df["TP_META"].astype(str).str.lower() == "real")
-    ]
+        (df["SEGMENTO"] == segmento)
+        & (df["NM_SUBCANAL"] == subcanal)
+        & (df["ANOMES"] == anomes)
+        & (df["TP_META"].astype(str).str.lower() == "real")
+    ].copy()
+
+    # Normaliza textos
+    df_f["NM_KPI_NORM"] = df_f["NM_KPI"].map(normalizar_texto)
 
     vol_71 = df_f.loc[
-        df_f["NM_KPI"].str.contains("7.1", case=False, na=False) &
-        df_f["NM_KPI"].str.contains("Transa", case=False, na=False),
+        df_f["NM_KPI_NORM"].str.contains(r"7\.1") &
+        df_f["NM_KPI_NORM"].str.contains("transa"),
         "VOL_KPI"
     ].sum()
 
     vol_41 = df_f.loc[
-        df_f["NM_KPI"].str.contains(r"\b4\.1\b", regex=True, na=False) &
-        df_f["NM_KPI"].str.contains("Únicos", case=False, na=False),
+        df_f["NM_KPI_NORM"].str.contains(r"4\.1") &
+        df_f["NM_KPI_NORM"].str.contains("cpf"),
         "VOL_KPI"
     ].sum()
 
     vol_6 = df_f.loc[
-        df_f["NM_KPI"].str.contains("6", case=False, na=False) &
-        df_f["NM_KPI"].str.contains("Acesso", case=False, na=False),
+        df_f["NM_KPI_NORM"].str.contains(r"\b6\b") &
+        df_f["NM_KPI_NORM"].str.contains("acesso"),
         "VOL_KPI"
     ].sum()
 
     return float(vol_71), float(vol_41), float(vol_6)
 
 def tx_trn_por_acesso(vol_71, vol_6):
-    if vol_6 <= 0:
-        return 1.0
-    tx = vol_71 / vol_6
-    return max(tx, 1.0)
+    return vol_71 / vol_6 if vol_6 > 0 else 1.0
 
 def tx_uu_por_cpf(vol_71, vol_41):
-    if vol_41 <= 0:
-        return DEFAULT_TX_UU_CPF
-    return vol_71 / vol_41
+    return vol_71 / vol_41 if vol_41 > 0 else DEFAULT_TX_UU_CPF
 
 # ====================== FILTROS ======================
 st.markdown("### 🔎 Filtros de Cenário")
@@ -134,9 +139,9 @@ subcanais = sorted(df.loc[df["SEGMENTO"] == segmento, "NM_SUBCANAL"].dropna().un
 subcanal = c3.selectbox("📌 Subcanal", subcanais)
 
 df_sub = df[
-    (df["SEGMENTO"] == segmento) &
-    (df["NM_SUBCANAL"] == subcanal) &
-    (df["ANOMES"] == anomes_escolhido)
+    (df["SEGMENTO"] == segmento)
+    & (df["NM_SUBCANAL"] == subcanal)
+    & (df["ANOMES"] == anomes_escolhido)
 ]
 tribo = df_sub["NM_TORRE"].dropna().unique().tolist()[0] if not df_sub.empty else "Indefinido"
 
@@ -219,9 +224,9 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     resultados = []
     for sub in sorted(df.loc[df["SEGMENTO"] == segmento, "NM_SUBCANAL"].dropna().unique()):
         df_i = df[
-            (df["SEGMENTO"] == segmento) &
-            (df["NM_SUBCANAL"] == sub) &
-            (df["ANOMES"] == anomes_escolhido)
+            (df["SEGMENTO"] == segmento)
+            & (df["NM_SUBCANAL"] == sub)
+            & (df["ANOMES"] == anomes_escolhido)
         ]
         tribo_i = df_i["NM_TORRE"].dropna().unique().tolist()[0] if not df_i.empty else "Indefinido"
         v71, v41, v6 = get_volumes(df, segmento, sub, anomes_escolhido)
@@ -294,16 +299,3 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     st.download_button("📥 Baixar Excel Completo", buffer.getvalue(),
                        file_name="simulacao_cr.xlsx",
                        mime="application/vnd.ms-excel")
-
-
-
-
-
-
-
-
-
-
-
-
-
