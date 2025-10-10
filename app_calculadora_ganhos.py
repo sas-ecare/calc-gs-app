@@ -1,4 +1,4 @@
-# app_calculadora_ganhos.py — versão final (NM_SUBCANAL oficial)
+# app_calculadora_ganhos.py — versão final (corrigida: leitura 4.1 + Pareto completo)
 import io, base64
 from pathlib import Path
 import numpy as np, pandas as pd, plotly.graph_objects as go, streamlit as st
@@ -50,8 +50,7 @@ URL = "https://raw.githubusercontent.com/gustavo3-freitas/base_calculadora/main/
 @st.cache_data(show_spinner=True)
 def carregar_dados():
     df = pd.read_excel(URL, sheet_name="Tabela Performance")
-    if "TP_META" in df.columns:
-        df = df[df["TP_META"].astype(str).str.lower().eq("real")]
+    df = df[df["TP_META"].astype(str).str.lower().eq("real")]
     df["VOL_KPI"] = pd.to_numeric(df["VOL_KPI"], errors="coerce")
     df["ANOMES"] = df["ANOMES"].astype(int)
     return df
@@ -82,23 +81,22 @@ def regra_retido_por_tribo(tribo):
     if str(tribo).strip().lower()=="dma": return RETIDO_DICT["Bot"]
     return RETIDO_DICT.get(tribo,RETIDO_DICT["Web"])
 
-def tx_uu_cpf_dyn(df_all, segmento, subcanal, anomes):
-    """ Calcula TX_UU/CPF no NM_SUBCANAL e ANOMES informados """
-    df_mes = df_all[(df_all["SEGMENTO"]==segmento) & (df_all["ANOMES"]==anomes)]
-    df_sub = df_mes[df_mes["NM_SUBCANAL"]==subcanal]
+def tx_uu_cpf_dyn(df_all, segmento, subcanal, anomes, tribo):
+    """ Aplica filtros da tabela dinâmica e calcula TX_UU/CPF """
+    df_filt = df_all[
+        (df_all["TP_META"].str.lower() == "real") &
+        (df_all["ANOMES"] == anomes) &
+        (df_all["SEGMENTO"] == segmento) &
+        (df_all["NM_SUBCANAL"] == subcanal) &
+        (df_all["NM_TORRE"] == tribo)
+    ]
 
-    vt = sum_kpi(df_sub,[r"7\.1","Transa"])
-    vu = sum_kpi(df_sub,[r"4\.1","Usuár","Únic","CPF"])
+    vt = sum_kpi(df_filt,[r"7\.1","Transa"])
+    vu = sum_kpi(df_filt,[r"4\.1","Usuár","Únic","CPF"])
     if vt>0 and vu>0:
         return (vt/vu, vt, vu, "NM_SUBCANAL", anomes)
-
-    # fallback para nível de segmento
-    vt_seg = sum_kpi(df_mes,[r"7\.1","Transa"])
-    vu_seg = sum_kpi(df_mes,[r"4\.1","Usuár","Únic","CPF"])
-    if vt_seg>0 and vu_seg>0:
-        return (vt_seg/vu_seg, vt_seg, vu_seg, "Segmento", anomes)
-
-    return (DEFAULT_TX_UU_CPF, 0, 0, "Fallback", anomes)
+    else:
+        return (DEFAULT_TX_UU_CPF, vt, vu, "Fallback", anomes)
 
 # ====================== FILTROS ======================
 st.markdown("### 🔎 Filtros de Cenário")
@@ -141,7 +139,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     retido = regra_retido_por_tribo(tribo)
     vol_acessos = volume_trans/tx_trn_acc
 
-    tx_uu_cpf, vol_trn_real, vol_user_real, origem_tx, anomes_usado = tx_uu_cpf_dyn(df,segmento,subcanal,anomes_escolhido)
+    tx_uu_cpf, vol_trn_real, vol_user_real, origem_tx, anomes_usado = tx_uu_cpf_dyn(df,segmento,subcanal,anomes_escolhido,tribo)
     mau_cpf = volume_trans/(tx_uu_cpf if tx_uu_cpf>0 else DEFAULT_TX_UU_CPF)
     vol_lig_ev_hum = (volume_trans/tx_trn_acc)*cr_segmento*retido
 
@@ -187,4 +185,73 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         padding:6px 16px;border-radius:12px;line-height:1">{fmt_int(vol_lig_ev_hum)}</div>
         </div></div>""", unsafe_allow_html=True)
 
-    st.caption("Fórmulas: Acessos = Transações ÷ (Tx Transações/Acesso).  MAU = Transações ÷ (Transações/Usuários no NM_SUBCANAL e ANOMES selecionado).  CR Evitado = Acessos × CR × %Retido.")
+    st.caption("Fórmulas: Acessos = Transações ÷ (Tx Transações/Acesso).  MAU = Transações ÷ (Transações/Usuários Únicos no NM_SUBCANAL e ANOMES selecionado).  CR Evitado = Acessos × CR × %Retido.")
+
+    # =================== PARETO ===================
+    st.markdown("---")
+    st.markdown("### 📄 Simulação - Todos os Subcanais")
+
+    resultados=[]
+    for sub in sorted(df["NM_SUBCANAL"].dropna().unique()):
+        df_i=df[(df["SEGMENTO"]==segmento)&(df["NM_SUBCANAL"]==sub)&(df["TP_META"].str.lower()=="real")]
+        tribo_i=df_i["NM_TORRE"].dropna().unique().tolist()[0] if not df_i.empty else "Indefinido"
+        tx_i=tx_trn_por_acesso(df_i)
+        tx_uu_i,_,_,_,_=tx_uu_cpf_dyn(df,segmento,sub,anomes_escolhido,tribo_i)
+        ret_i=regra_retido_por_tribo(tribo_i)
+        cr_seg_i=CR_SEGMENTO.get(segmento,0.50)
+        vol_acc_i=volume_trans/tx_i
+        mau_i=volume_trans/(tx_uu_i if tx_uu_i>0 else DEFAULT_TX_UU_CPF)
+        est_i=np.floor((vol_acc_i*cr_seg_i*ret_i)+1e-9)
+        resultados.append({
+            "Subcanal":sub,"Tribo":tribo_i,"Transações / Acessos":round(tx_i,2),
+            "% Lig. Humano":round(cr_seg_i*100,2),"↓ % Retido":round(ret_i*100,2),
+            "Volume de Acessos":int(vol_acc_i),"MAU (CPF)":int(mau_i),
+            "Volume de CR Evitado":int(est_i)})
+
+    df_lote=pd.DataFrame(resultados)
+    st.dataframe(df_lote,use_container_width=False)
+
+    # Pareto
+    st.markdown("### 🔎 Análise de Pareto - Potencial de Ganho")
+    df_p=df_lote.sort_values("Volume de CR Evitado",ascending=False).reset_index(drop=True)
+    tot=df_p["Volume de CR Evitado"].sum()
+    if tot>0:
+        df_p["Acumulado"]=df_p["Volume de CR Evitado"].cumsum()
+        df_p["Acumulado %"]=100*df_p["Acumulado"]/tot
+    else:
+        df_p["Acumulado"]=0; df_p["Acumulado %"]=0.0
+    df_p["Cor"]=np.where(df_p["Acumulado %"]<=80,"crimson","lightgray")
+    fig=go.Figure()
+    fig.add_trace(go.Bar(x=df_p["Subcanal"],y=df_p["Volume de CR Evitado"],
+                         name="Volume de CR Evitado",marker_color=df_p["Cor"]))
+    fig.add_trace(go.Scatter(x=df_p["Subcanal"],y=df_p["Acumulado %"],name="Acumulado %",
+                             mode="lines+markers",marker=dict(color="royalblue"),yaxis="y2"))
+    fig.update_layout(title="📈 Pareto - Volume de CR Evitado",
+                      xaxis=dict(title="Subcanais"),
+                      yaxis=dict(title="Volume de CR Evitado"),
+                      yaxis2=dict(title="Acumulado %",overlaying="y",side="right",range=[0,100]),
+                      legend=dict(x=0.7,y=1.15,orientation="h"),bargap=0.2,
+                      margin=dict(l=10,r=10,t=60,b=80))
+    st.plotly_chart(fig,use_container_width=False)
+
+    df_top=df_p[df_p["Acumulado %"]<=80]
+    st.markdown("### 🏆 Subcanais Prioritários (Top 80%)")
+    st.dataframe(df_top[["Subcanal","Tribo","Volume de CR Evitado","Acumulado %"]],
+                 use_container_width=False)
+
+    tot_ev=int(df_lote["Volume de CR Evitado"].sum())
+    top_names=", ".join(df_top["Subcanal"].tolist())
+    st.markdown(f"""**🧠 Insight Automático**  
+
+- Volume total estimado de **CR evitado**: **{fmt_int(tot_ev)}**.  
+- **{len(df_top)} subcanais** concentram **80 %** do potencial: **{top_names}**.  
+- **Ação:** priorize estes subcanais para maximizar impacto.""")
+
+    # Download
+    buffer=io.BytesIO()
+    with pd.ExcelWriter(buffer,engine="xlsxwriter") as w:
+        df_lote.to_excel(w,sheet_name="Resultados",index=False)
+        df_top.to_excel(w,sheet_name="Top_80_Pareto",index=False)
+    st.download_button("📥 Baixar Excel Completo",buffer.getvalue(),
+                       file_name="simulacao_cr.xlsx",
+                       mime="application/vnd.ms-excel")
