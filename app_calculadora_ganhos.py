@@ -50,22 +50,56 @@ RETIDO_DICT = {"App": 0.9169, "Bot": 0.8835, "Web": 0.9027}
 CR_SEGMENTO = {"Móvel": 0.4947, "Residencial": 0.4989}
 DEFAULT_TX_UU_CPF = 12.28
 
+
+
+
+
+
 # ====================== NORMALIZAÇÃO ======================
 def _norm_txt(x: str) -> str:
-    """remove acentos, NBSP, múltiplos espaços, deixa minúsculo"""
+    """remove acentos, NBSP, travessões, múltiplos espaços, deixa minúsculo"""
     if pd.isna(x):
         return ""
-    s = str(x).replace("\u00A0", " ")
+    s = str(x)
+    s = s.replace("\u00A0", " ")   # NBSP
+    s = s.replace("–", "-")        # travessão
+    s = s.replace("—", "-")        # em dash
     s = unicodedata.normalize("NFD", s)
     s = "".join(ch for ch in s if unicodedata.category(ch) != "Mn")
     s = s.strip().lower()
     s = re.sub(r"\s+", " ", s)
     return s
 
-# chaves-alvo para NM_KPI
-KPI_TRANS = _norm_txt("7.1 - Transações")
-KPI_UU_CPF = _norm_txt("4.1 - Usuários Únicos (CPF)")
-KPI_ACESSOS = _norm_txt("6 - Acessos Usuários")
+def vol_by_kpi(df_scope: pd.DataFrame, kpi_key: str) -> float:
+    """tenta igualdade exata e fallback por regex (ex: '4.1' e 'cpf')"""
+    if df_scope.empty:
+        return 0.0
+
+    # tentativa exata
+    vol = df_scope.loc[df_scope["KPI_KEY"] == kpi_key, "VOL_KPI"].sum()
+
+    # fallback mais flexível: se for 4.1 - CPF ou 7.1 - Transa
+    if vol == 0 and "4.1" in kpi_key:
+        vol = df_scope.loc[
+            df_scope["KPI_KEY"].str.contains("4.1") &
+            df_scope["KPI_KEY"].str.contains("cpf"),
+            "VOL_KPI"
+        ].sum()
+    elif vol == 0 and "7.1" in kpi_key:
+        vol = df_scope.loc[
+            df_scope["KPI_KEY"].str.contains("7.1") &
+            df_scope["KPI_KEY"].str.contains("transa"),
+            "VOL_KPI"
+        ].sum()
+    elif vol == 0 and "6" in kpi_key:
+        vol = df_scope.loc[
+            df_scope["KPI_KEY"].str.contains("6") &
+            df_scope["KPI_KEY"].str.contains("acess"),
+            "VOL_KPI"
+        ].sum()
+
+    return float(vol)
+
 
 # ====================== BASE ======================
 URL = "https://raw.githubusercontent.com/gustavo3-freitas/base_calculadora/main/Tabela_Performance.xlsx"
@@ -336,3 +370,4 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     st.download_button("📥 Baixar Excel Completo", buffer.getvalue(),
                        file_name="simulacao_cr.xlsx",
                        mime="application/vnd.ms-excel")
+
