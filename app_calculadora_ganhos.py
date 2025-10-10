@@ -96,7 +96,7 @@ def carregar_dados():
     df["VOL_KPI"] = pd.to_numeric(df["VOL_KPI"], errors="coerce").fillna(0)
     df["ANOMES"] = pd.to_numeric(df["ANOMES"], errors="coerce").astype(int)
     df["SEG_KEY"] = df["SEGMENTO"].map(_norm_txt)
-    df["SUB_KEY"] = df["NM_SUBCANAL"].map(_norm_txt)
+    df["SUB_KEY"] = df["Subcanal1"].map(_norm_txt)
     df["TORRE_KEY"] = df["NM_TORRE"].map(_norm_txt)
     df["KPI_KEY"] = df["NM_KPI"].map(_norm_txt)
     return df
@@ -298,3 +298,4 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     st.download_button("📥 Baixar Excel Completo",buffer.getvalue(),
                        file_name="simulacao_cr.xlsx",
                        mime="application/vnd.ms-excel")
+
