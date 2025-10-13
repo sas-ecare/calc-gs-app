@@ -198,9 +198,9 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
                     padding:12px 0; box-shadow:0 6px 14px rgba(139,0,0,.15);"> {value}
         </div>
     </div> """
-     st.markdown(card_style_vertical_duplo.format(
+    st.markdown(card_style_vertical_duplo.format(
         title="Volume de Transações", value=fmt_int(volume_trans)), unsafe_allow_html=True)
-
+    
     st.markdown(card_style_vertical_duplo.format(
         title="Taxa de Transação × Acesso", value=f"{tx_trn_acc:.2f}"), unsafe_allow_html=True)
 
@@ -223,8 +223,6 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         title="Volume de CR Evitado Estimado", value=fmt_int(cr_evitado_floor)), unsafe_allow_html=True)
 
 
-
-    
    
     st.caption("Fórmulas: Acessos = Transações ÷ (Tx Transações/Acesso).  MAU = Transações ÷ (Transações/Usuários Únicos).  CR Evitado = Acessos × CR × %Retido.")
 
@@ -349,6 +347,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
