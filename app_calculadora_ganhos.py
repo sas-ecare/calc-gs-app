@@ -196,7 +196,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         title="% Retido Digital 72h", value=f"{retido*100:.2f}%"), unsafe_allow_html=True)
 
     st.markdown(card_style_vertical.format(
-        title="Volume Ligações Evitadas Humano", value=fmt_int(cr_evitado_floor)), unsafe_allow_html=True)
+        title="Volume Ligações Evitadas Humano", value=fmt_int(cr_evitado_floor)), gap="large" unsafe_allow_html=True)
 
     st.markdown(card_style_vertical.format(
         title="Volume de Acessos", value=fmt_int(vol_acessos)), unsafe_allow_html=True)
@@ -207,7 +207,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     
     st.markdown(
         f"""
-        <div style="max-width:440; padding:20px;
+        <div style="max-width:440px; padding:20px;
         background:linear-gradient(45deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
         border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;">
           <div style="display:flex;justify-content:space-between;align-items:center">
@@ -342,6 +342,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
