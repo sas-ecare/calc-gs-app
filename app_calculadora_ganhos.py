@@ -207,6 +207,35 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     st.markdown(card_style_vertical.format(
         title="Volume de CR Evitado Estimado", value=fmt_int(cr_evitado_floor)), unsafe_allow_html=True)
 
+    card_style_vertical_duplo = """
+    <div style="max-width:480px; margin:20px auto; display:flex;
+                justify-content:space-between; align-items:center;">
+        <div style="flex:1; padding:18px 25px;
+                    background:linear-gradient(45deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
+                    border-radius:18px 0 0 18px; box-shadow:0 6px 14px rgba(139,0,0,.25);
+                    color:#fff; font-weight:900; font-size:20px;">
+            {title}
+        </div>
+        <div style="width:150px; background:#fff; color:#b31313; font-weight:900;
+                    font-size:20px; text-align:center; border-radius:0 18px 18px 0;
+                    padding:12px 0; box-shadow:0 6px 14px rgba(139,0,0,.15);">
+            {value}
+        </div>
+    </div>
+    """
+
+
+
+
+
+
+    st.markdown("### 🅰️ Modelo Integrado")
+    st.markdown(card_style_vertical.format(title="Volume de Transações", value=fmt_int(volume_trans)), unsafe_allow_html=True)
+
+    st.markdown("### 🅱️ Modelo Duas Colunas")
+    st.markdown(card_style_vertical_duplo.format(title="Volume de Transações", value=fmt_int(volume_trans)), unsafe_allow_html=True)
+
+
 
     
    
@@ -333,6 +362,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
