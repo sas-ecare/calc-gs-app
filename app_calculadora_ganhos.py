@@ -167,7 +167,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
 
     # Resultados
     st.markdown("---")
-    st.markdown("### 📊 ResultadoS")
+    st.markdown("### 📊 Resultados")
     c1,c2,c3 = st.columns(3)
     c1.metric("VOLUME DE TRANSAÇÕES", fmt_int(volume_trans))
     c2.metric("TAXA TRANSAÇÃO × ACESSO", f"{tx_trn_acc:.2f}")
@@ -176,6 +176,73 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     c4.metric("RETIDO DIGITAL 72H", f"{retido*100:.2f}%")
     c5.metric("VOLUME DE ACESSOS", fmt_int(vol_acessos))
     c6.metric("VOLUME DE MAU (CPF)", fmt_int(mau_cpf))
+
+        # =================== RESULTADOS - VISUAL COM CARDS ===================
+    st.markdown("---")
+    st.markdown("### 📊 Resultados")
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.markdown(
+            f"""
+            <div style="max-width:630px; padding:25px 35px;
+            background:linear-gradient(90deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
+            border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div style="font-weight:700;font-size:22px;">Volume de Transações</div>
+                <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
+                            padding:6px 16px;border-radius:12px;line-height:1">{fmt_int(volume_trans)}</div>
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with col2:
+        st.markdown(
+            f"""
+            <div style="max-width:630px; padding:25px 35px;
+            background:linear-gradient(90deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
+            border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div style="font-weight:700;font-size:22px;">Volume de Acessos</div>
+                <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
+                            padding:6px 16px;border-radius:12px;line-height:1">{fmt_int(vol_acessos)}</div>
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with col3:
+        st.markdown(
+            f"""
+            <div style="max-width:630px; padding:25px 35px;
+            background:linear-gradient(90deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
+            border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div style="font-weight:700;font-size:22px;">Volume de CR Evitado</div>
+                <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
+                            padding:6px 16px;border-radius:12px;line-height:1">{fmt_int(cr_evitado_floor)}</div>
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    # Linha 2 de métricas complementares
+    st.markdown(" ")
+    col4, col5, col6 = st.columns(3)
+    col4.metric("Taxa Transação/Acesso", f"{tx_trn_acc:.2f}")
+    col5.metric("Tx UU/CPF", f"{tx_uu_cpf:.2f}")
+    col6.metric("% Retido Digital", f"{retido*100:.2f}%")
+
+    col7, col8, col9 = st.columns(3)
+    col7.metric("% CR Segmento", f"{cr_segmento*100:.2f}%")
+    col8.metric("MAU (CPF)", fmt_int(mau_cpf))
+    col9.metric("Tribo", tribo)
+
 
     with st.expander("🔍 Diagnóstico de Premissas", expanded=False):
         st.markdown(f"""
@@ -186,8 +253,8 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
 
         | Item | Valor |
         |------|------:|
-        | Volume transacoes | {fmt_int(vol_71)} |
-        | Volume usuarios_unicos_cpf | {fmt_int(vol_41)} |
+        | Volume Transações | {fmt_int(vol_71)} |
+        | Volume Úsuarios Únicos CPF | {fmt_int(vol_41)} |
         | Volume acessos | {fmt_int(vol_6)} |
         | **Tx Transações/Acessos** | {tx_trn_acc:.2f} |
         | **Tx UU/CPF** | {tx_uu_cpf:.2f} |
@@ -203,11 +270,6 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;">
           <div style="display:flex;justify-content:space-between;align-items:center">
             <div style="font-weight:700;font-size:30px;">Volume de CR Evitado Estimado</div>
-            <div style="font-weight:800;font-size:40px;background:#fff;color:#b31313;
-                        padding:6px 16px;border-radius:12px;line-height:1">{fmt_int(cr_evitado_floor)}</div>
-          </div>
-
-          <div style="font-weight:700;font-size:30px;">Teste1</div>
             <div style="font-weight:800;font-size:40px;background:#fff;color:#b31313;
                         padding:6px 16px;border-radius:12px;line-height:1">{fmt_int(cr_evitado_floor)}</div>
           </div>
