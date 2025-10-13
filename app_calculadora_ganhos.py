@@ -166,107 +166,47 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     cr_evitado_floor = np.floor(cr_evitado + 1e-9)
 
         # =================== RESULTADOS - 6 CARDS UNIFORMES ===================
+        # =================== RESULTADOS - 6 CARDS UNIFORMES E SEPARADOS ===================
     st.markdown("---")
     st.markdown("### 📊 Resultados Gerais")
 
-    col1, col2, col3 = st.columns(3)
+    card_style = """
+        <div style="padding:25px 35px; margin:12px;  /* espaçamento entre cards */
+        background:linear-gradient(90deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
+        border-radius:18px; box-shadow:0 8px 18px rgba(139,0,0,.25);
+        color:#fff; text-align:center;">
+            <div style="font-weight:700;font-size:22px;">{title}</div>
+            <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
+                        margin-top:12px;padding:8px 18px;border-radius:12px;
+                        display:inline-block;min-width:140px;">{value}</div>
+        </div>
+    """
+
+    # Primeira linha (3 cards)
+    col1, col2, col3 = st.columns([1, 1, 1], gap="large")
+
     with col1:
-        st.markdown(
-            f"""
-            <div style="max-width:630px; padding:25px 35px;
-            background:linear-gradient(90deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
-            border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;text-align:center;">
-              <div style="font-weight:700;font-size:22px;">Volume de Transações</div>
-              <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
-                          margin-top:10px;padding:6px 16px;border-radius:12px;display:inline-block;">
-                {fmt_int(volume_trans)}
-              </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
+        st.markdown(card_style.format(title="Volume de Transações", value=fmt_int(volume_trans)),
+                    unsafe_allow_html=True)
     with col2:
-        st.markdown(
-            f"""
-            <div style="max-width:630px; padding:25px 35px;
-            background:linear-gradient(90deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
-            border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;text-align:center;">
-              <div style="font-weight:700;font-size:22px;">Volume de Acessos</div>
-              <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
-                          margin-top:10px;padding:6px 16px;border-radius:12px;display:inline-block;">
-                {fmt_int(vol_acessos)}
-              </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
+        st.markdown(card_style.format(title="Volume de Acessos", value=fmt_int(vol_acessos)),
+                    unsafe_allow_html=True)
     with col3:
-        st.markdown(
-            f"""
-            <div style="max-width:630px; padding:25px 35px;
-            background:linear-gradient(90deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
-            border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;text-align:center;">
-              <div style="font-weight:700;font-size:22px;">Volume de CR Evitado</div>
-              <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
-                          margin-top:10px;padding:6px 16px;border-radius:12px;display:inline-block;">
-                {fmt_int(cr_evitado_floor)}
-              </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        st.markdown(card_style.format(title="Volume de CR Evitado", value=fmt_int(cr_evitado_floor)),
+                    unsafe_allow_html=True)
 
-    # Segunda linha de cards
-    col4, col5, col6 = st.columns(3)
+    # Segunda linha (3 cards)
+    col4, col5, col6 = st.columns([1, 1, 1], gap="large")
+
     with col4:
-        st.markdown(
-            f"""
-            <div style="max-width:630px; padding:25px 35px;
-            background:linear-gradient(90deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
-            border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;text-align:center;">
-              <div style="font-weight:700;font-size:22px;">Tx Transação/Acesso</div>
-              <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
-                          margin-top:10px;padding:6px 16px;border-radius:12px;display:inline-block;">
-                {tx_trn_acc:.2f}
-              </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
+        st.markdown(card_style.format(title="Tx Transação/Acesso", value=f"{tx_trn_acc:.2f}"),
+                    unsafe_allow_html=True)
     with col5:
-        st.markdown(
-            f"""
-            <div style="max-width:630px; padding:25px 35px;
-            background:linear-gradient(90deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
-            border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;text-align:center;">
-              <div style="font-weight:700;font-size:22px;">Tx UU/CPF</div>
-              <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
-                          margin-top:10px;padding:6px 16px;border-radius:12px;display:inline-block;">
-                {tx_uu_cpf:.2f}
-              </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
+        st.markdown(card_style.format(title="Tx UU/CPF", value=f"{tx_uu_cpf:.2f}"),
+                    unsafe_allow_html=True)
     with col6:
-        st.markdown(
-            f"""
-            <div style="max-width:630px; padding:25px 35px;
-            background:linear-gradient(90deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
-            border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;text-align:center;">
-              <div style="font-weight:700;font-size:22px;">% Retido Digital</div>
-              <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
-                          margin-top:10px;padding:6px 16px;border-radius:12px;display:inline-block;">
-                {retido*100:.2f}%
-              </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        st.markdown(card_style.format(title="% Retido Digital", value=f"{retido*100:.2f}%"),
+                    unsafe_allow_html=True)
 
 
 
@@ -408,6 +348,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
