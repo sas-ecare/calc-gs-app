@@ -165,20 +165,22 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     cr_evitado = vol_acessos * cr_segmento * retido
     cr_evitado_floor = np.floor(cr_evitado + 1e-9)
 
-        # =================== RESULTADOS - 6 CARDS UNIFORMES ===================
+    
         # =================== RESULTADOS - 6 CARDS UNIFORMES E SEPARADOS ===================
     st.markdown("---")
     st.markdown("### 📊 Resultados Gerais")
 
     card_style = """
-        <div style="padding:25px 35px; margin:12px;  /* espaçamento entre cards */
+        <div style="width:30%; min-width:280px; padding:25px 35px; margin:15px auto;
         background:linear-gradient(90deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
         border-radius:18px; box-shadow:0 8px 18px rgba(139,0,0,.25);
-        color:#fff; text-align:center;">
-            <div style="font-weight:700;font-size:22px;">{title}</div>
+        color:#fff; text-align:center; display:flex; flex-direction:column;
+        justify-content:center; align-items:center;">
+            <div style="font-weight:700;font-size:22px;white-space:normal;
+                        line-height:1.2;margin-bottom:10px;">{title}</div>
             <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
-                        margin-top:12px;padding:8px 18px;border-radius:12px;
-                        display:inline-block;min-width:140px;">{value}</div>
+                        padding:8px 18px;border-radius:12px;display:inline-block;
+                        min-width:140px;">{value}</div>
         </div>
     """
 
@@ -348,6 +350,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
