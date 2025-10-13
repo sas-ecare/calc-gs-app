@@ -175,8 +175,8 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         background:linear-gradient(45deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
         border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;">
           <div style="display:flex;justify-content:space-between;align-items:center">
-            <div style="font-weight:300;font-size:20px;">Volume de CR Evitado Estimado</div>
-            <div style="font-weight:200;font-size:10px;background:#fff;color:#b31313;
+            <div style="font-weight:900;font-size:20px;">Volume de CR Evitado Estimado</div>
+            <div style="font-weight:900;font-size:20px;background:#fff;color:#b31313;
                         padding:6px 16px;border-radius:12px;line-height:1">{fmt_int(cr_evitado_floor)}</div>
           </div>
         </div>
@@ -306,6 +306,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
