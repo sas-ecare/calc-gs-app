@@ -167,8 +167,44 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
 
     
        # =================== RESULTADOS - CARDS DUPLA COR ===================
-    
+        # =================== RESULTADOS - CARDS EMPILHADOS ===================
+    st.markdown("---")
+    st.markdown("### 📊 Resultados Gerais")
 
+    card_style_vertical = """
+        <div style="max-width:42%; padding:10px 45px; margin:12px auto;
+        background:linear-gradient(45deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
+        border-radius:18px; box-shadow:0 8px 18px rgba(139,0,0,.25); color:#fff;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="font-weight:900; font-size:20px;">{title}</div>
+            <div style="font-weight:900; font-size:20px; background:#fff; color:#b31313;
+                        padding:6px 16px; border-radius:12px; line-height:1;">{value}</div>
+          </div>
+        </div>
+    """
+
+    st.markdown(card_style_vertical.format(
+        title="Volume de Transações", value=fmt_int(volume_trans)), unsafe_allow_html=True)
+
+    st.markdown(card_style_vertical.format(
+        title="Taxa de Transação × Acesso", value=f"{tx_trn_acc:.2f}"), unsafe_allow_html=True)
+
+    st.markdown(card_style_vertical.format(
+        title="% Ligação Direcionada Humano", value=f"{CR_SEGMENTO.get(segmento,0.5)*100:.2f}%"), unsafe_allow_html=True)
+
+    st.markdown(card_style_vertical.format(
+        title="% Retido Digital 72h", value=f"{retido*100:.2f}%"), unsafe_allow_html=True)
+
+    st.markdown(card_style_vertical.format(
+        title="Volume Ligações Evitadas Humano", value=fmt_int(cr_evitado_floor)), unsafe_allow_html=True)
+
+    st.markdown(card_style_vertical.format(
+        title="Volume de Acessos", value=fmt_int(vol_acessos)), unsafe_allow_html=True)
+
+    st.markdown(card_style_vertical.format(
+        title="Volume de MAU (CPF)", value=fmt_int(mau_cpf)), unsafe_allow_html=True)
+
+    
     st.markdown(
         f"""
         <div style="max-width:42%; padding:10px 45px;
@@ -306,6 +342,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
