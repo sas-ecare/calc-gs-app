@@ -183,28 +183,28 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         </div>
     """
 
-    st.markdown(card_style_vertical.format(
+    st.markdown(card_style_vertical_duplo.format(
         title="Volume de Transações", value=fmt_int(volume_trans)), unsafe_allow_html=True)
 
-    st.markdown(card_style_vertical.format(
+    st.markdown(card_style_vertical_duplo.format(
         title="Taxa de Transação × Acesso", value=f"{tx_trn_acc:.2f}"), unsafe_allow_html=True)
 
-    st.markdown(card_style_vertical.format(
+    st.markdown(card_style_vertical_duplo.format(
         title="% Ligação Direcionada Humano", value=f"{CR_SEGMENTO.get(segmento,0.5)*100:.2f}%"), unsafe_allow_html=True)
 
     st.markdown(card_style_vertical.format(
         title="% Retido Digital 72h", value=f"{retido*100:.2f}%"), unsafe_allow_html=True)
 
-    st.markdown(card_style_vertical.format(
+    st.markdown(card_style_vertical_duplo.format(
         title="Volume Ligações Evitadas Humano", value=fmt_int(cr_evitado_floor)), unsafe_allow_html=True)
 
-    st.markdown(card_style_vertical.format(
+    st.markdown(card_style_vertical_duplo.format(
         title="Volume de Acessos", value=fmt_int(vol_acessos)), unsafe_allow_html=True)
 
-    st.markdown(card_style_vertical.format(
+    st.markdown(card_style_vertical_duplo.format(
         title="Volume de MAU (CPF)", value=fmt_int(mau_cpf)), unsafe_allow_html=True)
 
-    st.markdown(card_style_vertical.format(
+    st.markdown(card_style_vertical_duplo.format(
         title="Volume de CR Evitado Estimado", value=fmt_int(cr_evitado_floor)), unsafe_allow_html=True)
 
     card_style_vertical_duplo = """
@@ -224,16 +224,6 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     </div>
     """
 
-
-
-
-
-
-    st.markdown("### 🅰️ Modelo Integrado")
-    st.markdown(card_style_vertical.format(title="Volume de Transações", value=fmt_int(volume_trans)), unsafe_allow_html=True)
-
-    st.markdown("### 🅱️ Modelo Duas Colunas")
-    st.markdown(card_style_vertical_duplo.format(title="Volume de Transações", value=fmt_int(volume_trans)), unsafe_allow_html=True)
 
 
 
@@ -362,6 +352,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
