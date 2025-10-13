@@ -195,11 +195,9 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         </div>
         <div style="width:150px; background:#fff; color:#b31313; font-weight:900;
                     font-size:20px; text-align:center; border-radius:0 18px 18px 0;
-                    padding:12px 0; box-shadow:0 6px 14px rgba(139,0,0,.15);">
-            {value}
+                    padding:12px 0; box-shadow:0 6px 14px rgba(139,0,0,.15);"> {value}
         </div>
-    </div>
-    """
+    </div> """
      st.markdown(card_style_vertical_duplo.format(
         title="Volume de Transações", value=fmt_int(volume_trans)), unsafe_allow_html=True)
 
@@ -351,6 +349,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
