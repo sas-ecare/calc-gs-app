@@ -165,34 +165,21 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     cr_evitado = vol_acessos * cr_segmento * retido
     cr_evitado_floor = np.floor(cr_evitado + 1e-9)
 
-    # Resultados
+        # =================== RESULTADOS - 6 CARDS UNIFORMES ===================
     st.markdown("---")
-    st.markdown("### 📊 Resultados")
-    c1,c2,c3 = st.columns(3)
-    c1.metric("VOLUME DE TRANSAÇÕES", fmt_int(volume_trans))
-    c2.metric("TAXA TRANSAÇÃO × ACESSO", f"{tx_trn_acc:.2f}")
-    c3.metric("% LIGAÇÃO DIRECIONADA HUMANO", f"{cr_segmento*100:.2f}%")
-    c4,c5,c6 = st.columns(3)
-    c4.metric("RETIDO DIGITAL 72H", f"{retido*100:.2f}%")
-    c5.metric("VOLUME DE ACESSOS", fmt_int(vol_acessos))
-    c6.metric("VOLUME DE MAU (CPF)", fmt_int(mau_cpf))
-
-        # =================== RESULTADOS - VISUAL COM CARDS ===================
-    st.markdown("---")
-    st.markdown("### 📊 Resultados")
+    st.markdown("### 📊 Resultados Gerais")
 
     col1, col2, col3 = st.columns(3)
-
     with col1:
         st.markdown(
             f"""
             <div style="max-width:630px; padding:25px 35px;
             background:linear-gradient(90deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
-            border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;">
-              <div style="display:flex;justify-content:space-between;align-items:center">
-                <div style="font-weight:700;font-size:22px;">Volume de Transações</div>
-                <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
-                            padding:6px 16px;border-radius:12px;line-height:1">{fmt_int(volume_trans)}</div>
+            border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;text-align:center;">
+              <div style="font-weight:700;font-size:22px;">Volume de Transações</div>
+              <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
+                          margin-top:10px;padding:6px 16px;border-radius:12px;display:inline-block;">
+                {fmt_int(volume_trans)}
               </div>
             </div>
             """,
@@ -204,11 +191,11 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
             f"""
             <div style="max-width:630px; padding:25px 35px;
             background:linear-gradient(90deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
-            border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;">
-              <div style="display:flex;justify-content:space-between;align-items:center">
-                <div style="font-weight:700;font-size:22px;">Volume de Acessos</div>
-                <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
-                            padding:6px 16px;border-radius:12px;line-height:1">{fmt_int(vol_acessos)}</div>
+            border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;text-align:center;">
+              <div style="font-weight:700;font-size:22px;">Volume de Acessos</div>
+              <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
+                          margin-top:10px;padding:6px 16px;border-radius:12px;display:inline-block;">
+                {fmt_int(vol_acessos)}
               </div>
             </div>
             """,
@@ -220,29 +207,29 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
             f"""
             <div style="max-width:630px; padding:25px 35px;
             background:linear-gradient(90deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
-            border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;">
-              <div style="display:flex;justify-content:space-between;align-items:center">
-                <div style="font-weight:700;font-size:22px;">Volume de CR Evitado</div>
-                <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
-                            padding:6px 16px;border-radius:12px;line-height:1">{fmt_int(cr_segmento)}</div>
+            border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;text-align:center;">
+              <div style="font-weight:700;font-size:22px;">Volume de CR Evitado</div>
+              <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
+                          margin-top:10px;padding:6px 16px;border-radius:12px;display:inline-block;">
+                {fmt_int(cr_evitado_floor)}
               </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
+    # Segunda linha de cards
     col4, col5, col6 = st.columns(3)
-
     with col4:
         st.markdown(
             f"""
             <div style="max-width:630px; padding:25px 35px;
             background:linear-gradient(90deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
-            border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;">
-              <div style="display:flex;justify-content:space-between;align-items:center">
-                <div style="font-weight:700;font-size:22px;">Volume de CR Evitado</div>
-                <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
-                            padding:6px 16px;border-radius:12px;line-height:1">{fmt_int(retido)}</div>
+            border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;text-align:center;">
+              <div style="font-weight:700;font-size:22px;">Tx Transação/Acesso</div>
+              <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
+                          margin-top:10px;padding:6px 16px;border-radius:12px;display:inline-block;">
+                {tx_trn_acc:.2f}
               </div>
             </div>
             """,
@@ -254,11 +241,11 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
             f"""
             <div style="max-width:630px; padding:25px 35px;
             background:linear-gradient(90deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
-            border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;">
-              <div style="display:flex;justify-content:space-between;align-items:center">
-                <div style="font-weight:700;font-size:22px;">Volume de CR Evitado</div>
-                <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
-                            padding:6px 16px;border-radius:12px;line-height:1">{fmt_int(vol_acessos)}</div>
+            border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;text-align:center;">
+              <div style="font-weight:700;font-size:22px;">Tx UU/CPF</div>
+              <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
+                          margin-top:10px;padding:6px 16px;border-radius:12px;display:inline-block;">
+                {tx_uu_cpf:.2f}
               </div>
             </div>
             """,
@@ -270,16 +257,17 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
             f"""
             <div style="max-width:630px; padding:25px 35px;
             background:linear-gradient(90deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
-            border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;">
-              <div style="display:flex;justify-content:space-between;align-items:center">
-                <div style="font-weight:700;font-size:22px;">Volume de CR Evitado</div>
-                <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
-                            padding:6px 16px;border-radius:12px;line-height:1">{fmt_int(mau_cpf)}</div>
+            border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;text-align:center;">
+              <div style="font-weight:700;font-size:22px;">% Retido Digital</div>
+              <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
+                          margin-top:10px;padding:6px 16px;border-radius:12px;display:inline-block;">
+                {retido*100:.2f}%
               </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
+
 
 
         # =================== KPI CARD ===================
@@ -420,6 +408,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
