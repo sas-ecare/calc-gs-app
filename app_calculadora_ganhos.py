@@ -166,12 +166,47 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     cr_evitado_floor = np.floor(cr_evitado + 1e-9)
 
     
-        # =================== RESULTADOS - 6 CARDS UNIFORMES E SEPARADOS ===================
+       # =================== RESULTADOS - CARDS DUPLA COR ===================
     st.markdown("---")
     st.markdown("### 📊 Resultados Gerais")
 
-    card_style = """
-        <div style="width:30%; min-width:55%; padding:25px 35px; margin:15px auto;
+    # ---------------- PRIMEIRA LINHA (4 CARDS - VERMELHO HORIZONTAL) ----------------
+    card_style_top = """
+        <div style="width:30%; min-width:300px; padding:25px 35px; margin:15px auto;
+        background:linear-gradient(90deg,#a60e0e 0%,#c21a1a 60%,#de2b2b 100%);
+        border-radius:18px; box-shadow:0 8px 18px rgba(139,0,0,.25);
+        color:#fff; text-align:center; display:flex; flex-direction:column;
+        justify-content:center; align-items:center;">
+            <div style="font-weight:700;font-size:22px;white-space:normal;
+                        line-height:1.2;margin-bottom:10px;">{title}</div>
+            <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
+                        padding:8px 18px;border-radius:12px;display:inline-block;
+                        min-width:140px;">{value}</div>
+        </div>
+    """
+
+    col1, col2, col3, col4 = st.columns([1, 1, 1, 1], gap="large")
+
+    with col1:
+        st.markdown(card_style_top.format(title="Volume de Transações", value=fmt_int(volume_trans)),
+                    unsafe_allow_html=True)
+
+    with col2:
+        st.markdown(card_style_top.format(title="Taxa de Transação × Acesso", value=f"{tx_trn_acc:.2f}"),
+                    unsafe_allow_html=True)
+
+    with col3:
+        st.markdown(card_style_top.format(title="% Ligação Direcionada Humano", value=f"{CR_SEGMENTO.get(segmento,0.5)*100:.2f}%"),
+                    unsafe_allow_html=True)
+
+    with col4:
+        st.markdown(card_style_top.format(title="% Retido Digital 72h", value=f"{retido*100:.2f}%"),
+                    unsafe_allow_html=True)
+
+
+    # ---------------- SEGUNDA LINHA (3 CARDS - VERMELHO 45°) ----------------
+    card_style_bottom = """
+        <div style="width:30%; min-width:300px; padding:25px 35px; margin:15px auto;
         background:linear-gradient(45deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
         border-radius:18px; box-shadow:0 8px 18px rgba(139,0,0,.25);
         color:#fff; text-align:center; display:flex; flex-direction:column;
@@ -184,38 +219,16 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         </div>
     """
 
-    # Primeira linha (4 cards)
-    col1, col2, col3, col4 = st.columns([1, 1, 1, 1 ], gap="large")
+    col5, col6, col7 = st.columns([1, 1, 1], gap="large")
 
-    with col1:
-        st.markdown(card_style.format(title="Volume de Transações", value=fmt_int(volume_trans)),
-                    unsafe_allow_html=True)
-
-     with col2:
-        st.markdown(card_style.format(title="Taxa de Transação x Acesso", value=f"{tx_trn_acc:.2f}"),
-                    unsafe_allow_html=True)
-
-    with col3:
-        st.markdown(card_style.format(title="% Ligação Direcionada Humano", value=f"{cr_evitado_floor*100:.2f}%") ,
-                    unsafe_allow_html=True)
-
-    with col4:
-        st.markdown(card_style.format(title="% Retido Digital 72h", value=f"{retido*100:.2f}%"),
-                    unsafe_allow_html=True)
-
-
-      # Segunda linha (3 cards)
-    col4, col5, col6 = st.columns([1, 1, 1], gap="large")
-
-    with col4:
-        st.markdown(card_style.format(title="Volume Ligações Evitadas Humano", value=fmt_int(cr_evitado_floor)),
-                    unsafe_allow_html=True)
-    with col2:
-        st.markdown(card_style.format(title="Volume de Acessos", value=fmt_int(vol_acessos)),
-                    unsafe_allow_html=True)
-   
     with col5:
-        st.markdown(card_style.format(title="Volume de MAU (CPF)", value=f"{tx_uu_cpf:.2f}"),
+        st.markdown(card_style_bottom.format(title="Volume Ligações Evitadas Humano", value=fmt_int(cr_evitado_floor)),
+                    unsafe_allow_html=True)
+    with col6:
+        st.markdown(card_style_bottom.format(title="Volume de Acessos", value=fmt_int(vol_acessos)),
+                    unsafe_allow_html=True)
+    with col7:
+        st.markdown(card_style_bottom.format(title="Volume de MAU (CPF)", value=fmt_int(mau_cpf)),
                     unsafe_allow_html=True)
 
 
@@ -360,6 +373,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
