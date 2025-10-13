@@ -224,24 +224,80 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
               <div style="display:flex;justify-content:space-between;align-items:center">
                 <div style="font-weight:700;font-size:22px;">Volume de CR Evitado</div>
                 <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
-                            padding:6px 16px;border-radius:12px;line-height:1">{fmt_int(cr_evitado_floor)}</div>
+                            padding:6px 16px;border-radius:12px;line-height:1">{fmt_int(cr_segmento)}</div>
               </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-    # Linha 2 de métricas complementares
-    st.markdown(" ")
     col4, col5, col6 = st.columns(3)
-    col4.metric("Taxa Transação/Acesso", f"{tx_trn_acc:.2f}")
-    col5.metric("Tx UU/CPF", f"{tx_uu_cpf:.2f}")
-    col6.metric("% Retido Digital", f"{retido*100:.2f}%")
 
-    col7, col8, col9 = st.columns(3)
-    col7.metric("% CR Segmento", f"{cr_segmento*100:.2f}%")
-    col8.metric("MAU (CPF)", fmt_int(mau_cpf))
-    col9.metric("Tribo", tribo)
+    with col4:
+        st.markdown(
+            f"""
+            <div style="max-width:630px; padding:25px 35px;
+            background:linear-gradient(90deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
+            border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div style="font-weight:700;font-size:22px;">Volume de CR Evitado</div>
+                <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
+                            padding:6px 16px;border-radius:12px;line-height:1">{fmt_int(retido)}</div>
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with col5:
+        st.markdown(
+            f"""
+            <div style="max-width:630px; padding:25px 35px;
+            background:linear-gradient(90deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
+            border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div style="font-weight:700;font-size:22px;">Volume de CR Evitado</div>
+                <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
+                            padding:6px 16px;border-radius:12px;line-height:1">{fmt_int(vol_acessos)}</div>
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with col6:
+        st.markdown(
+            f"""
+            <div style="max-width:630px; padding:25px 35px;
+            background:linear-gradient(90deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
+            border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div style="font-weight:700;font-size:22px;">Volume de CR Evitado</div>
+                <div style="font-weight:800;font-size:30px;background:#fff;color:#b31313;
+                            padding:6px 16px;border-radius:12px;line-height:1">{fmt_int(mau_cpf)}</div>
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+        # =================== KPI CARD ===================
+    st.markdown(
+        f"""
+        <div style="max-width:630px; padding:30px 45px;
+        background:linear-gradient(90deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
+        border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:700;font-size:30px;">Volume de CR Evitado Estimado</div>
+            <div style="font-weight:800;font-size:40px;background:#fff;color:#b31313;
+                        padding:6px 16px;border-radius:12px;line-height:1">{fmt_int(cr_evitado_floor)}</div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.caption("Fórmulas: Acessos = Transações ÷ (Tx Transações/Acesso).  MAU = Transações ÷ (Transações/Usuários Únicos).  CR Evitado = Acessos × CR × %Retido.")
 
 
     with st.expander("🔍 Diagnóstico de Premissas", expanded=False):
@@ -262,22 +318,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         | % Retido Aplicado | {retido*100:.2f}% |
         """, unsafe_allow_html=True)
 
-    # =================== KPI CARD ===================
-    st.markdown(
-        f"""
-        <div style="max-width:630px; padding:30px 45px;
-        background:linear-gradient(90deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
-        border-radius:18px;box-shadow:0 8px 18px rgba(139,0,0,.25);color:#fff;">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div style="font-weight:700;font-size:30px;">Volume de CR Evitado Estimado</div>
-            <div style="font-weight:800;font-size:40px;background:#fff;color:#b31313;
-                        padding:6px 16px;border-radius:12px;line-height:1">{fmt_int(cr_evitado_floor)}</div>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    st.caption("Fórmulas: Acessos = Transações ÷ (Tx Transações/Acesso).  MAU = Transações ÷ (Transações/Usuários Únicos).  CR Evitado = Acessos × CR × %Retido.")
+
 
     # =================== PARETO ===================
     st.markdown("---")
@@ -379,6 +420,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
