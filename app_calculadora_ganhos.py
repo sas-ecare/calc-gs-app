@@ -194,21 +194,22 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         st.markdown(card_style.format(title="Volume de Acessos", value=fmt_int(vol_acessos)),
                     unsafe_allow_html=True)
     with col3:
-        st.markdown(card_style.format(title="Volume de CR Evitado", value=fmt_int(cr_evitado_floor)),
+        st.markdown(card_style.format(title="Volume Ligações Evitadas Humano", value=fmt_int(cr_evitado_floor)),
                     unsafe_allow_html=True)
 
     # Segunda linha (3 cards)
     col4, col5, col6 = st.columns([1, 1, 1], gap="large")
 
     with col4:
-        st.markdown(card_style.format(title="Tx Transação/Acesso", value=f"{tx_trn_acc:.2f}"),
+        st.markdown(card_style.format(title="Taxa de Transação x Acesso", value=f"{tx_trn_acc:.2f}"),
                     unsafe_allow_html=True)
     with col5:
-        st.markdown(card_style.format(title="Tx UU/CPF", value=f"{tx_uu_cpf:.2f}"),
+        st.markdown(card_style.format(title="Volume de MAU (CPF)", value=f"{tx_uu_cpf:.2f}"),
                     unsafe_allow_html=True)
     with col6:
-        st.markdown(card_style.format(title="% Retido Digital", value=f"{retido*100:.2f}%"),
+        st.markdown(card_style.format(title="% Retido Digital 72h", value=f"{retido*100:.2f}%"),
                     unsafe_allow_html=True)
+
 
 
 
@@ -350,6 +351,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
