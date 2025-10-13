@@ -171,8 +171,8 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     st.markdown("### 📊 Resultados Gerais")
 
     card_style = """
-        <div style="width:30%; min-width:280px; padding:25px 35px; margin:15px auto;
-        background:linear-gradient(90deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
+        <div style="width:30%; min-width:55%; padding:25px 35px; margin:15px auto;
+        background:linear-gradient(45deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
         border-radius:18px; box-shadow:0 8px 18px rgba(139,0,0,.25);
         color:#fff; text-align:center; display:flex; flex-direction:column;
         justify-content:center; align-items:center;">
@@ -350,6 +350,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
