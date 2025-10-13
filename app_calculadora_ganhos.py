@@ -172,9 +172,9 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
 
     # ---------------- PRIMEIRA LINHA (4 CARDS - VERMELHO HORIZONTAL) ----------------
     card_style_top = """
-        <div style="width:30%; min-width:75%; padding:25px 35px; margin:15px auto;
-        background:linear-gradient(107deg,red 99%%,transparent);
-        border-radius:18px; box-shadow:0 8px 18px red;
+        <div style="width:30%; min-width:90%; padding:25px 35px; margin:15px auto;
+        background:linear-gradient(45deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
+        border-radius:18px; box-shadow:0 8px 18px rgba(139,0,0,.25);
         color:#fff; text-align:center; display:flex; flex-direction:column;
         justify-content:center; align-items:center;">
             <div style="font-weight:700;font-size:22px;white-space:normal;
@@ -206,8 +206,8 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
 
     # ---------------- SEGUNDA LINHA (3 CARDS - VERMELHO 45°) ----------------
     card_style_bottom = """
-        <div style="width:30%; min-width:300px; padding:25px 35px; margin:15px auto;
-        background:linear-gradient(45deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
+        <div style="width:30%; min-width:90%; padding:25px 35px; margin:15px auto;
+        background:linear-gradient(45deg,red);
         border-radius:18px; box-shadow:0 8px 18px rgba(139,0,0,.25);
         color:#fff; text-align:center; display:flex; flex-direction:column;
         justify-content:center; align-items:center;">
@@ -373,6 +373,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
