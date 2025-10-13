@@ -206,6 +206,11 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
             <div style="font-weight:800;font-size:40px;background:#fff;color:#b31313;
                         padding:6px 16px;border-radius:12px;line-height:1">{fmt_int(cr_evitado_floor)}</div>
           </div>
+
+          <div style="font-weight:700;font-size:30px;">Teste1</div>
+            <div style="font-weight:800;font-size:40px;background:#fff;color:#b31313;
+                        padding:6px 16px;border-radius:12px;line-height:1">{fmt_int(cr_evitado_floor)}</div>
+          </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -312,5 +317,6 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
