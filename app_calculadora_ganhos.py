@@ -180,19 +180,18 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
             <div style="font-weight:900; font-size:20px; background:#fff; color:#b31313;
                         padding:6px 16px; border-radius:12px; line-height:1;">{value}</div>
           </div>
-        </div>
-    """
+            </div>
+        """
 
    
 
     card_style_vertical_duplo = """
     <div style="max-width:480px; margin:20px auto; display:flex;
-                justify-content:space-between; align-items:center;">
+        justify-content:space-between; align-items:center;">
         <div style="flex:1; padding:18px 25px;
-                    background:linear-gradient(45deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
-                    border-radius:18px 0 0 18px; box-shadow:0 6px 14px rgba(139,0,0,.25);
-                    color:#fff; font-weight:900; font-size:20px;">
-            {title}
+        background:linear-gradient(45deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
+        border-radius:18px 0 0 18px; box-shadow:0 6px 14px rgba(139,0,0,.25);
+        color:#fff; font-weight:900; font-size:20px;">{title}
         </div>
         <div style="width:150px; background:#fff; color:#b31313; font-weight:900;
                     font-size:20px; text-align:center; border-radius:0 18px 18px 0;
@@ -352,6 +351,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
