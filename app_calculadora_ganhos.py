@@ -250,7 +250,7 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.markdown(card_style_claro.format(title="Volume de Transações", value=fmt_int(volume_trans)), unsafe_allow_html=True)
-    st.markdown(card_style_claro.format(title="Taxa de Transação × Acesso", value=f"{tx_trn_acc:.2f}"), unsafe_allow_html=True)
+    #st.markdown(card_style_claro.format(title="Taxa de Transação × Acesso", value=f"{tx_trn_acc:.2f}"), unsafe_allow_html=True)
     st.markdown(card_style_claro.format(title="% Ligação Direcionada Humano", value=f"{CR_SEGMENTO.get(segmento,0.5)*100:.2f}%"), unsafe_allow_html=True)
     st.markdown(card_style_claro.format(title="% Retido Digital 72h", value=f"{retido*100:.2f}%"), unsafe_allow_html=True)
 
@@ -387,6 +387,7 @@ with col2:
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
