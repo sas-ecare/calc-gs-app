@@ -124,7 +124,7 @@ def get_volumes(df, segmento, subcanal, anomes):
     vol_6  = soma_kpi(df_f, ["acesso", "6 "])
     return float(vol_71), float(vol_41), float(vol_6)
 
-def tx_trn_por_acesso( vol_6,vol_71):
+def tx_trn_por_acesso( vol_71,vol_6,):
     return max(vol_6/vol_71, 1.0) if vol_6 > 0 else 1.0
 
 def tx_uu_por_cpf(vol_71, vol_41):
@@ -202,7 +202,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     # ---- Layout em duas colunas ----
     col1, col2 = st.columns(2, gap="large")
 
-    # -------- COLUNA 1 (VERMELHA - CLARO PRINCIPAL) --------
+    # -------- COLUNA 1 (VERMELHA ESCURA - CLARO PRINCIPAL) --------
     with col1:
         st.markdown(card_claro_darkred.format(
             title="Volume de Transações", value=fmt_int(volume_trans)), unsafe_allow_html=True)
@@ -216,7 +216,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         st.markdown(card_claro_darkred .format(
             title="% Retido Digital 72h", value=f"{retido*100:.2f}%"), unsafe_allow_html=True)
 
-    # -------- COLUNA 2 (DOURADA - VARIAÇÃO PREMIUM) --------
+    # -------- COLUNA 2 (VERMELHA - RESULTADOS) --------
     with col2:
         st.markdown(card_claro_red.format(
             title="Volume Ligações Evitadas Humano", value=fmt_int(cr_evitado_floor)), unsafe_allow_html=True)
@@ -356,6 +356,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
