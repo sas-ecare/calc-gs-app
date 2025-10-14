@@ -139,7 +139,7 @@ anomes_unicos = sorted(df["ANOMES"].unique())
 meses_map = {1:"Jan",2:"Fev",3:"Mar",4:"Abr",5:"Mai",6:"Jun",7:"Jul",8:"Ago",9:"Set",10:"Out",11:"Nov",12:"Dez"}
 mes_legivel = [f"{meses_map[int(str(a)[4:]) ]}/{str(a)[:4]}" for a in anomes_unicos]
 map_anomes_legivel = dict(zip(mes_legivel, anomes_unicos))
-anomes_legivel = c2.selectbox("🗓️ MÊS", mes_legivel, index=len(mes_legivel))
+anomes_legivel = c2.selectbox("🗓️ MÊS", mes_legivel, index=len(mes_legivel)-0)
 anomes_escolhido = map_anomes_legivel[anomes_legivel]
 subcanais = sorted(df.loc[df["SEGMENTO"] == segmento, "NM_SUBCANAL"].dropna().unique())
 subcanal = c3.selectbox("📌 SUBCANAL", subcanais)
@@ -356,6 +356,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
