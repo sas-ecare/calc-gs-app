@@ -167,40 +167,45 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
 
     
        # =================== RESULTADOS - CARDS DUPLA COR ===================
-        # =================== RESULTADOS - CARDS EMPILHADOS ===================
+         # =================== RESULTADOS GERAIS - CARDS VERTICAIS (REFINADO) ===================
     st.markdown("---")
     st.markdown("### 📊 Resultados Gerais")
 
+    # ---- Estilo A: Card simples (texto + valor no mesmo bloco) ----
     card_style_vertical = """
-        <div style="max-width:440px; padding:20px;
-        background:linear-gradient(45deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
-        border-radius:18px; box-shadow:0 8px 18px rgba(139,0,0,.25); color:#fff;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div style="font-weight:900; font-size:20px;">{title}</div>
+        <div style="width:460px; padding:18px 24px; margin:14px 0;
+        background:linear-gradient(45deg,#b31313 0%,#d01f1f 70%,#e23a3a 100%);
+        border-radius:16px; box-shadow:0 4px 10px rgba(139,0,0,.25);
+        color:#fff; display:flex; justify-content:space-between; align-items:center;
+        text-align:left;">
+            <div style="font-weight:800; font-size:18px;">{title}</div>
             <div style="font-weight:900; font-size:20px; background:#fff; color:#b31313;
-                        padding:6px 16px; border-radius:12px; line-height:1;">{value}</div>
-          </div>
-            </div>
-        """
+                        padding:6px 14px; border-radius:10px; min-width:90px;
+                        text-align:center;">{value}</div>
+        </div>
+    """
 
-   
-
+    # ---- Estilo B: Card duplo (coluna vermelha + coluna branca separada) ----
     card_style_vertical_duplo = """
-    <div style="max-width:480px; margin:20px auto; display:flex;
-        justify-content:space-between; align-items:center;">
-        <div style="flex:1; padding:18px 25px;
-        background:linear-gradient(45deg,#b31313 0%,#d01f1f 60%,#e23a3a 100%);
-        border-radius:18px 0 0 18px; box-shadow:0 6px 14px rgba(139,0,0,.25);
-        color:#fff; font-weight:900; font-size:20px;">{title}
+        <div style="width:620px; margin:16px 0; display:flex; justify-content:flex-start; align-items:center;">
+            <div style="flex:1; padding:18px 22px;
+                        background:linear-gradient(45deg,#b31313 0%,#d01f1f 70%,#e23a3a 100%);
+                        border-radius:16px 0 0 16px; box-shadow:0 4px 10px rgba(139,0,0,.25);
+                        color:#fff; font-weight:800; font-size:18px;">
+                {title}
+            </div>
+            <div style="width:180px; background:#fff; color:#b31313; font-weight:900;
+                        font-size:20px; text-align:center; border-radius:0 16px 16px 0;
+                        padding:10px 0; box-shadow:0 4px 10px rgba(139,0,0,.15);">
+                {value}
+            </div>
         </div>
-        <div style="width:150px; background:#fff; color:#b31313; font-weight:900;
-                    font-size:20px; text-align:center; border-radius:0 18px 18px 0;
-                    padding:12px 0; box-shadow:0 6px 14px rgba(139,0,0,.15);"> {value}
-        </div>
-    </div> """
+    """
+
+    # ---- Renderização dos Cards (alinhados à esquerda) ----
     st.markdown(card_style_vertical_duplo.format(
         title="Volume de Transações", value=fmt_int(volume_trans)), unsafe_allow_html=True)
-    
+
     st.markdown(card_style_vertical_duplo.format(
         title="Taxa de Transação × Acesso", value=f"{tx_trn_acc:.2f}"), unsafe_allow_html=True)
 
@@ -221,6 +226,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
 
     st.markdown(card_style_vertical_duplo.format(
         title="Volume de CR Evitado Estimado", value=fmt_int(cr_evitado_floor)), unsafe_allow_html=True)
+
 
 
    
@@ -347,6 +353,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
