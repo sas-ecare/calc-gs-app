@@ -168,12 +168,13 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     
        # =================== RESULTADOS - CARDS DUPLA COR ===================
          # =================== RESULTADOS GERAIS - CARDS VERTICAIS (REFINADO) ===================
+    # =================== RESULTADOS GERAIS - DUAS COLUNAS (PALETA CLARO) ===================
     st.markdown("---")
     st.markdown("### 📊 Resultados Gerais")
 
-    # ---- Estilo A: Card simples (texto + valor no mesmo bloco) ----
-    card_style_vertical = """
-        <div style="width:460px; padding:18px 24px; margin:14px 0;
+    # ---- Card estilo A: Vermelho institucional (lado esquerdo) ----
+    card_claro_red = """
+        <div style="width:460px; padding:18px 24px; margin:12px 0;
         background:linear-gradient(45deg,#b31313 0%,#d01f1f 70%,#e23a3a 100%);
         border-radius:16px; box-shadow:0 4px 10px rgba(139,0,0,.25);
         color:#fff; display:flex; justify-content:space-between; align-items:center;
@@ -185,81 +186,50 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         </div>
     """
 
-    # ---- Estilo B: Card duplo (coluna vermelha + coluna branca separada) ----
-    card_style_vertical_duplo = """
-        <div style="width:620px; margin:16px 0; display:flex; justify-content:flex-start; align-items:center;">
-            <div style="flex:1; padding:18px 22px;
-                        background:linear-gradient(45deg,#b31313 0%,#d01f1f 70%,#e23a3a 100%);
-                        border-radius:16px 0 0 16px;text-align:center; box-shadow:0 4px 10px rgba(139,0,0,.25);
-                        color:#fff; font-weight:800; font-size:18px;">
-                {title}
-            </div>
-            <div style="width:180px; background:#fff; color:#b31313; font-weight:900;
-                        font-size:20px; text-align:center; border-radius:0 16px 16px 0;
-                        padding:18px 0; box-shadow:0 4px 10px rgba(139,0,0,.15);">
-                {value}
-            </div>
+    # ---- Card estilo B: Dourado premium (lado direito) ----
+    card_claro_gold = """
+        <div style="width:460px; padding:18px 24px; margin:12px 0;
+        background:linear-gradient(45deg,#ffcc33 0%,#ffb347 60%,#ffd480 100%);
+        border-radius:16px; box-shadow:0 4px 10px rgba(255,195,60,.25);
+        color:#5a2e00; display:flex; justify-content:space-between; align-items:center;
+        text-align:left;">
+            <div style="font-weight:800; font-size:18px;">{title}</div>
+            <div style="font-weight:900; font-size:20px; background:#fff; color:#d35400;
+                        padding:6px 14px; border-radius:10px; min-width:90px;
+                        text-align:center;">{value}</div>
         </div>
     """
 
-    # ---- Renderização dos Cards (alinhados à esquerda) ----
-    st.markdown(card_style_vertical_duplo.format(
-        title="Volume de Transações", value=fmt_int(volume_trans)), unsafe_allow_html=True)
+    # ---- Layout em duas colunas ----
+    col1, col2 = st.columns(2, gap="large")
 
-    st.markdown(card_style_vertical_duplo.format(
-        title="Taxa de Transação × Acesso", value=f"{tx_trn_acc:.2f}"), unsafe_allow_html=True)
+    # -------- COLUNA 1 (VERMELHA - CLARO PRINCIPAL) --------
+    with col1:
+        st.markdown(card_claro_red.format(
+            title="Volume de Transações", value=fmt_int(volume_trans)), unsafe_allow_html=True)
 
-    st.markdown(card_style_vertical_duplo.format(
-        title="% Ligação Direcionada Humano", value=f"{CR_SEGMENTO.get(segmento,0.5)*100:.2f}%"), unsafe_allow_html=True)
+        st.markdown(card_claro_red.format(
+            title="Taxa de Transação × Acesso", value=f"{tx_trn_acc:.2f}"), unsafe_allow_html=True)
 
-    st.markdown(card_style_vertical_duplo.format(
-        title="% Retido Digital 72h", value=f"{retido*100:.2f}%"), unsafe_allow_html=True)
+        st.markdown(card_claro_red.format(
+            title="% Ligação Direcionada Humano", value=f"{CR_SEGMENTO.get(segmento,0.5)*100:.2f}%"), unsafe_allow_html=True)
 
-    st.markdown(card_style_vertical_duplo.format(
-        title="Volume Ligações Evitadas Humano", value=fmt_int(cr_evitado_floor)), unsafe_allow_html=True)
+        st.markdown(card_claro_red.format(
+            title="% Retido Digital 72h", value=f"{retido*100:.2f}%"), unsafe_allow_html=True)
 
-    st.markdown(card_style_vertical_duplo.format(
-        title="Volume de Acessos", value=fmt_int(vol_acessos)), unsafe_allow_html=True)
+    # -------- COLUNA 2 (DOURADA - VARIAÇÃO PREMIUM) --------
+    with col2:
+        st.markdown(card_claro_gold.format(
+            title="Volume Ligações Evitadas Humano", value=fmt_int(cr_evitado_floor)), unsafe_allow_html=True)
 
-    st.markdown(card_style_vertical_duplo.format(
-        title="Volume de MAU (CPF)", value=fmt_int(mau_cpf)), unsafe_allow_html=True)
+        st.markdown(card_claro_gold.format(
+            title="Volume de Acessos", value=fmt_int(vol_acessos)), unsafe_allow_html=True)
 
-    st.markdown(card_style_vertical_duplo.format(
-        title="Volume de CR Evitado Estimado", value=fmt_int(cr_evitado_floor)), unsafe_allow_html=True)
+        st.markdown(card_claro_gold.format(
+            title="Volume de MAU (CPF)", value=fmt_int(mau_cpf)), unsafe_allow_html=True)
 
-
-    st.markdown("---")
-    st.markdown("### 📊 Resultados Gerais 2")
-
-# ---- Estilo único (vermelho Claro SA) ----
-card_style_claro = """
-    <div style="width:100%; padding:18px 24px; margin:14px 0;
-    background:linear-gradient(45deg,#b31313 0%,#d01f1f 70%,#e23a3a 100%);
-    border-radius:16px; box-shadow:0 4px 10px rgba(139,0,0,.25);
-    color:#fff; display:flex; justify-content:space-between; align-items:center;
-    text-align:left;">
-        <div style="font-weight:800; font-size:18px;">{title}</div>
-        <div style="font-weight:900; font-size:20px; background:#fff; color:#b31313;
-                    padding:6px 14px; border-radius:10px; min-width:90px;
-                    text-align:center;">{value}</div>
-    </div>
-"""
-
-# ---- Layout em duas colunas ----
-col1, col2 = st.columns(2)
-
-with col1:
-    st.markdown(card_style_claro.format(title="Volume de Transações", value=fmt_int(volume_trans)), unsafe_allow_html=True)
-    #st.markdown(card_style_claro.format(title="Taxa de Transação × Acesso", value=f"{tx_trn_acc:.2f}"), unsafe_allow_html=True)
-    st.markdown(card_style_claro.format(title="% Ligação Direcionada Humano", value=f"{CR_SEGMENTO.get(segmento,0.5)*100:.2f}%"), unsafe_allow_html=True)
-    st.markdown(card_style_claro.format(title="% Retido Digital 72h", value=f"{retido*100:.2f}%"), unsafe_allow_html=True)
-
-with col2:
-    st.markdown(card_style_claro.format(title="Volume Ligações Evitadas Humano", value=fmt_int(cr_evitado_floor)), unsafe_allow_html=True)
-    st.markdown(card_style_claro.format(title="Volume de Acessos", value=fmt_int(vol_acessos)), unsafe_allow_html=True)
-    st.markdown(card_style_claro.format(title="Volume de MAU (CPF)", value=fmt_int(mau_cpf)), unsafe_allow_html=True)
-    st.markdown(card_style_claro.format(title="Volume de CR Evitado Estimado", value=fmt_int(cr_evitado_floor)), unsafe_allow_html=True)
-
+        st.markdown(card_claro_gold.format(
+            title="Volume de CR Evitado Estimado", value=fmt_int(cr_evitado_floor)), unsafe_allow_html=True)
 
 
 
@@ -387,6 +357,7 @@ with col2:
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
