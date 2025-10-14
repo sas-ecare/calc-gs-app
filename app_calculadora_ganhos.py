@@ -387,7 +387,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
             desc = df_lote[["Volume Acessos", "Volume CR Evitado", "% CR", "% Retido"]].describe().T
             desc["CV (%)"] = (desc["std"] / desc["mean"] * 100).round(2)
             st.markdown("### 📈 Estatísticas Descritivas por Indicador")
-            st.dataframe(desc[["mean", "std", "min", "25%", "50%", "75%", "max", "CV (%)"]],
+            st.dataframe(desc[["Média", "Desvio", "Min", "25%", "50%", "75%", "Max", "CV (%)"]],
                      use_container_width=False)
 
         # Correlação
@@ -405,7 +405,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         fig_scatter.add_trace(go.Scatter(
             x=df_lote["Volume Acessos"], y=df_lote["Volume CR Evitado"],
             mode="markers+text", text=df_lote["Subcanal"],
-            textposition="top center", marker=dict(size=10, color="#b31313", opacity=0.7)
+            textposition="top center", marker=dict(size=8, color="#b31313", opacity=0.7)
         ))
         fig_scatter.update_layout(
             title="🔬 Relação entre Volume de Acessos e Volume CR Evitado",
@@ -428,6 +428,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         #st.plotly_chart(fig_box, use_container_width=False)
     #else:
      #   st.info("Sem dados disponíveis para análise estatística neste cenário.")
+
 
 
 
