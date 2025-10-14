@@ -104,31 +104,51 @@ def regra_retido_por_tribo(tribo):
     return RETIDO_DICT.get(tribo, RETIDO_DICT["Web"])
 
 # ====================== FUNÇÕES DE LEITURA ======================
+# ====================== FUNÇÕES DE LEITURA ======================
 def soma_kpi(df_scope, termos):
+    """Soma os valores de VOL_KPI se algum dos termos aparecer no NM_KPI_NORM."""
     mask = False
     for termo in termos:
         mask |= df_scope["NM_KPI_NORM"].str.contains(termo, case=False, na=False)
     return df_scope.loc[mask, "VOL_KPI"].sum()
 
+
 def get_volumes(df, segmento, subcanal, anomes):
+    """Filtra o dataframe pelo segmento, subcanal e ANOMES, retornando os volumes principais."""
     seg_key = normalize_text(segmento)
     sub_key = normalize_text(subcanal)
     df_f = df[
-        (df["SEGMENTO_NORM"] == seg_key) &
-        (df["SUBCANAL_NORM"] == sub_key) &
-        (df["ANOMES"] == anomes)
+        (df["SEGMENTO_NORM"] == seg_key)
+        & (df["SUBCANAL_NORM"] == sub_key)
+        & (df["ANOMES"] == anomes)
     ].copy()
 
     vol_71 = soma_kpi(df_f, ["transacao", "transa", "7 1"])
     vol_41 = soma_kpi(df_f, ["usuario unico", "cpf", "4 1"])
-    vol_6  = soma_kpi(df_f, ["acesso", "6 "])
+    vol_6 = soma_kpi(df_f, ["acesso", "6 "])
+
     return float(vol_71), float(vol_41), float(vol_6)
 
-def tx_trn_por_acesso(vol_71,vol_6,):
-    return max(vol_6/vol_71, 1.0) if vol_6 > 0 else 1.0
+
+def tx_trn_por_acesso(vol_71, vol_6):
+    """
+    Calcula a taxa de Transações ÷ Acessos, com proteção contra divisões por zero.
+    Mantém valor mínimo de 1.0 para evitar distorções ou erro de divisão.
+    """
+    if vol_71 <= 0 or vol_6 <= 0:
+        st.warning("⚠️ Dados incompletos: volumes zerados para este subcanal. Aplicando taxa padrão 1.0.")
+        return 1.0
+    return max(vol_71 / vol_6, 1.0)
+
 
 def tx_uu_por_cpf(vol_71, vol_41):
-    return vol_71 / vol_41 if vol_41 > 0 else DEFAULT_TX_UU_CPF
+    """
+    Calcula a taxa Transações ÷ Usuários Únicos CPF com fallback para DEFAULT_TX_UU_CPF.
+    """
+    if vol_41 <= 0:
+        st.warning("⚠️ Volume de Usuários Únicos (CPF) zerado — usando valor padrão.")
+        return DEFAULT_TX_UU_CPF
+    return vol_71 / vol_41
 
 # ====================== FILTROS ======================
 st.markdown("## 🔎 Filtros de Cenário")
@@ -356,60 +376,3 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
