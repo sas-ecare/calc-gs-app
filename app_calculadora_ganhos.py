@@ -187,9 +187,9 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     """
 
     # ---- Card estilo B: Dourado premium (lado direito) ----
-    card_claro_gold = """
+    card_claro_darkred = """
         <div style="width:460px; padding:18px 24px; margin:12px 0;
-        background:linear-gradient(45deg,#ffcc33 0%,#ffb347 60%,#ffd480 100%);
+        background:darkred;
         border-radius:16px; box-shadow:0 4px 10px rgba(255,195,60,.25);
         color:#5a2e00; display:flex; justify-content:space-between; align-items:center;
         text-align:left;">
@@ -205,13 +205,13 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
 
     # -------- COLUNA 1 (VERMELHA - CLARO PRINCIPAL) --------
     with col1:
-        st.markdown(card_claro_red.format(
+        st.markdown(card_claro_darkred.format(
             title="Volume de Transações", value=fmt_int(volume_trans)), unsafe_allow_html=True)
 
-        st.markdown(card_claro_red.format(
+        st.markdown(card_claro_darkred.format(
             title="Taxa de Transação × Acesso", value=f"{tx_trn_acc:.2f}"), unsafe_allow_html=True)
 
-        st.markdown(card_claro_red.format(
+        st.markdown(card_claro_darkred.format(
             title="% Ligação Direcionada Humano", value=f"{CR_SEGMENTO.get(segmento,0.5)*100:.2f}%"), unsafe_allow_html=True)
 
         st.markdown(card_claro_red.format(
@@ -228,8 +228,8 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         st.markdown(card_claro_red.format(
             title="Volume de MAU (CPF)", value=fmt_int(mau_cpf)), unsafe_allow_html=True)
 
-        st.markdown(card_claro_gold.format(
-            title="Volume de CR Evitado Estimado", value=fmt_int(cr_evitado_floor)), unsafe_allow_html=True)
+       # st.markdown(card_claro_gold.format(
+       #    title="Volume de CR Evitado Estimado", value=fmt_int(cr_evitado_floor)), unsafe_allow_html=True)
 
 
 
@@ -357,6 +357,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
