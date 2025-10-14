@@ -124,7 +124,7 @@ def get_volumes(df, segmento, subcanal, anomes):
     vol_6  = soma_kpi(df_f, ["acesso", "6 "])
     return float(vol_71), float(vol_41), float(vol_6)
 
-def tx_trn_por_acesso( vol_71,vol_6,):
+def tx_trn_por_acesso(vol_71,vol_6,):
     return max(vol_6/vol_71, 1.0) if vol_6 > 0 else 1.0
 
 def tx_uu_por_cpf(vol_71, vol_41):
@@ -155,7 +155,7 @@ volume_trans = st.number_input("📥 VOLUME DE TRANSAÇÕES ESPERADO", min_value
 # ====================== CÁLCULOS ======================
 if st.button("🚀 Calcular Ganhos Potenciais"):
     vol_71, vol_41, vol_6 = get_volumes(df, segmento, subcanal, anomes_escolhido)
-    tx_trn_acc = tx_trn_por_acesso(vol_71, vol_6)
+    tx_trn_acc = tx_trn_por_acesso(vol_71,vol_6)
     tx_uu_cpf = tx_uu_por_cpf(vol_71, vol_41)
     cr_segmento = CR_SEGMENTO.get(segmento, 0.50)
     retido = regra_retido_por_tribo(tribo)
@@ -356,6 +356,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
