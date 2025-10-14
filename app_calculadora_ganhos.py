@@ -36,7 +36,7 @@ def _find_asset_bytes(name_candidates):
                     return p.read_bytes()
     return None
 
-logo_bytes = _find_asset_bytes(["claro_logo","logo_claro","claro"])
+logo_bytes = _find_asset_bytes(["claro_logo_BF","logo_claro","claro"])
 if logo_bytes:
     img_b64 = base64.b64encode(logo_bytes).decode()
     st.markdown(f"""
@@ -208,7 +208,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
             title="Volume de Transações", value=fmt_int(volume_trans)), unsafe_allow_html=True)
 
         st.markdown(card_claro_darkred.format(
-            title="Taxa de Transação × Acesso", value=f"{tx_trn_acc:.2f}"), unsafe_allow_html=True)
+            title="Taxa de Transação ÷ Acesso", value=f"{tx_trn_acc:.2f}"), unsafe_allow_html=True)
 
         st.markdown(card_claro_darkred.format(
             title="% Ligação Direcionada Humano", value=f"{CR_SEGMENTO.get(segmento,0.5)*100:.2f}%"), unsafe_allow_html=True)
@@ -356,6 +356,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
