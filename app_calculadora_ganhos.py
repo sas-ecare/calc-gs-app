@@ -36,7 +36,7 @@ def _find_asset_bytes(name_candidates):
                     return p.read_bytes()
     return None
 
-logo_bytes = _find_asset_bytes(["claro_logo2_2","logo_claro","claro"])
+logo_bytes = _find_asset_bytes(["claro_logo2_1","logo_claro","claro"])
 if logo_bytes:
     img_b64 = base64.b64encode(logo_bytes).decode()
     st.markdown(f"""
@@ -356,6 +356,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
