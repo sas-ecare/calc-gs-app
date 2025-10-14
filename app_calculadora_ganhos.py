@@ -213,7 +213,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         st.markdown(card_claro_darkred.format(
             title="% Ligação Direcionada Humano", value=f"{CR_SEGMENTO.get(segmento,0.5)*100:.2f}%"), unsafe_allow_html=True)
 
-        st.markdown(card_claro_red.format(
+        st.markdown(card_claro_darkred .format(
             title="% Retido Digital 72h", value=f"{retido*100:.2f}%"), unsafe_allow_html=True)
 
     # -------- COLUNA 2 (DOURADA - VARIAÇÃO PREMIUM) --------
@@ -356,6 +356,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
