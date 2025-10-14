@@ -190,13 +190,13 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         <div style="width:620px; margin:16px 0; display:flex; justify-content:flex-start; align-items:center;">
             <div style="flex:1; padding:18px 22px;
                         background:linear-gradient(45deg,#b31313 0%,#d01f1f 70%,#e23a3a 100%);
-                        border-radius:16px 0 0 16px; box-shadow:0 4px 10px rgba(139,0,0,.25);
+                        border-radius:16px 0 0 16px;text-align:center; box-shadow:0 4px 10px rgba(139,0,0,.25);
                         color:#fff; font-weight:800; font-size:18px;">
                 {title}
             </div>
             <div style="width:180px; background:#fff; color:#b31313; font-weight:900;
                         font-size:20px; text-align:center; border-radius:0 16px 16px 0;
-                        padding:10px 0; box-shadow:0 4px 10px rgba(139,0,0,.15);">
+                        padding:18px 0; box-shadow:0 4px 10px rgba(139,0,0,.15);">
                 {value}
             </div>
         </div>
@@ -353,6 +353,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
