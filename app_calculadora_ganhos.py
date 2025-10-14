@@ -219,13 +219,13 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
 
     # -------- COLUNA 2 (DOURADA - VARIAÇÃO PREMIUM) --------
     with col2:
-        st.markdown(card_claro_gold.format(
+        st.markdown(card_claro_red.format(
             title="Volume Ligações Evitadas Humano", value=fmt_int(cr_evitado_floor)), unsafe_allow_html=True)
 
-        st.markdown(card_claro_gold.format(
+        st.markdown(card_claro_red.format(
             title="Volume de Acessos", value=fmt_int(vol_acessos)), unsafe_allow_html=True)
 
-        st.markdown(card_claro_gold.format(
+        st.markdown(card_claro_red.format(
             title="Volume de MAU (CPF)", value=fmt_int(mau_cpf)), unsafe_allow_html=True)
 
         st.markdown(card_claro_gold.format(
@@ -357,6 +357,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
