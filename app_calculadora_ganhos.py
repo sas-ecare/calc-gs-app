@@ -125,7 +125,7 @@ def get_volumes(df, segmento, subcanal, anomes):
     return float(vol_71), float(vol_41), float(vol_6)
 
 def tx_trn_por_acesso(vol_71, vol_6):
-    return max(vol_71 / vol_6, 1.0) if vol_6 > 0 else 1.0
+    return max(vol_6/vol_71, 1.0) if vol_71 > 0 else 1.0
 
 def tx_uu_por_cpf(vol_71, vol_41):
     return vol_71 / vol_41 if vol_41 > 0 else DEFAULT_TX_UU_CPF
@@ -356,6 +356,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
