@@ -131,7 +131,7 @@ def tx_uu_por_cpf(vol_71, vol_41):
     return vol_71 / vol_41 if vol_41 > 0 else DEFAULT_TX_UU_CPF
 
 # ====================== FILTROS ======================
-st.markdown("### 🔎 Filtros de Cenário")
+st.markdown("## 🔎 Filtros de Cenário")
 c1, c2, c3 = st.columns(3)
 segmentos = sorted(df["SEGMENTO"].dropna().unique().tolist())
 segmento = c1.selectbox("📊 SEGMENTO", segmentos)
@@ -170,7 +170,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
          # =================== RESULTADOS GERAIS - CARDS VERTICAIS (REFINADO) ===================
     # =================== RESULTADOS GERAIS - DUAS COLUNAS (PALETA CLARO) ===================
     st.markdown("---")
-    st.markdown("### 📊 Resultados Gerais")
+    st.markdown("## 📊 Resultados Gerais")
 
     # ---- Card estilo A: Vermelho institucional (lado esquerdo) ----
     card_claro_red = """
@@ -258,7 +258,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
 
     # =================== PARETO ===================
     st.markdown("---")
-    st.markdown("### 📄 Simulação - Todos os Subcanais")
+    st.markdown("## 📄 Simulação - Todos os Subcanais")
     resultados = []
     for sub in sorted(df.loc[df["SEGMENTO"] == segmento, "NM_SUBCANAL"].dropna().unique()):
         df_i = df[
@@ -293,7 +293,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     st.dataframe(df_lote, use_container_width=False)
 
     # Pareto
-    st.markdown("### 🔎 Análise de Pareto - Potencial de Ganho")
+    st.markdown("## 🔎 Análise de Pareto - Potencial de Ganho")
     df_p = df_lote.sort_values("Volume CR Evitado", ascending=False).reset_index(drop=True)
     tot = df_p["Volume CR Evitado"].sum()
     df_p["Acumulado"] = df_p["Volume CR Evitado"].cumsum()
@@ -320,7 +320,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     df_top = df_p[df_p["Acumulado %"] <= 80].copy()
 
         # =================== INSIGHTS ===================
-    st.markdown("### 🧠 Insights")
+    st.markdown("## 🧠 Insights")
     st.markdown("**🏆 Subcanais Prioritários (Top 80%)**")
 
     if df_top.empty:
@@ -356,6 +356,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
