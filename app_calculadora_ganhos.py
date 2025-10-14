@@ -136,7 +136,7 @@ def tx_trn_por_acesso(vol_71, vol_6):
     Mantém valor mínimo de 1.0 para evitar distorções ou erro de divisão.
     """
     if vol_71 <= 0 or vol_6 <= 0:
-        st.warning("⚠️ Dados incompletos: volumes zerados para este subcanal. Aplicando taxa padrão 1.0.")
+        
         return 1.0
     return max(vol_71 / vol_6, 1.0)
 
@@ -146,7 +146,7 @@ def tx_uu_por_cpf(vol_71, vol_41):
     Calcula a taxa Transações ÷ Usuários Únicos CPF com fallback para DEFAULT_TX_UU_CPF.
     """
     if vol_41 <= 0:
-        st.warning("⚠️ Volume de Usuários Únicos (CPF) zerado — usando valor padrão.")
+        
         return DEFAULT_TX_UU_CPF
     return vol_71 / vol_41
 
@@ -376,3 +376,4 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
