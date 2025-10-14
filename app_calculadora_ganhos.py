@@ -378,6 +378,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     )
 
     # =================== ANÁLISE ESTATÍSTICA / DATA SCIENCE ===================
+    with st.expander("🔍 Estatística & Ciência de Dadoss", expanded=False):
     st.markdown("---")
     st.markdown("## 📊🔬 Análise Estatística & Ciência de Dados")
 
@@ -416,17 +417,18 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         st.plotly_chart(fig_scatter, use_container_width=False)
 
         # Boxplot - Distribuição dos resultados
-        fig_box = go.Figure()
-        fig_box.add_trace(go.Box(
-            y=df_lote["Volume CR Evitado"], name="Distribuição CR Evitado",
-            boxmean=True, marker_color="#d01f1f"
-        ))
-        fig_box.update_layout(title="📦 Distribuição dos Volumes de CR Evitado",
-                              yaxis_title="Volume CR Evitado",
-                              template="plotly_white", height=350)
-        st.plotly_chart(fig_box, use_container_width=False)
-    else:
-        st.info("Sem dados disponíveis para análise estatística neste cenário.")
+        #fig_box = go.Figure()
+        #fig_box.add_trace(go.Box(
+         #   y=df_lote["Volume CR Evitado"], name="Distribuição CR Evitado",
+          #  boxmean=True, marker_color="#d01f1f"
+        #))
+        #fig_box.update_layout(title="📦 Distribuição dos Volumes de CR Evitado",
+         #                     yaxis_title="Volume CR Evitado",
+          #                    template="plotly_white", height=350)
+        #st.plotly_chart(fig_box, use_container_width=False)
+    #else:
+     #   st.info("Sem dados disponíveis para análise estatística neste cenário.")
+
 
 
 
