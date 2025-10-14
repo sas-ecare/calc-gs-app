@@ -228,6 +228,40 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         title="Volume de CR Evitado Estimado", value=fmt_int(cr_evitado_floor)), unsafe_allow_html=True)
 
 
+    st.markdown("---")
+st.markdown("### 📊 Resultados Gerais")
+
+# ---- Estilo único (vermelho Claro SA) ----
+card_style_claro = """
+    <div style="width:100%; padding:18px 24px; margin:14px 0;
+    background:linear-gradient(45deg,#b31313 0%,#d01f1f 70%,#e23a3a 100%);
+    border-radius:16px; box-shadow:0 4px 10px rgba(139,0,0,.25);
+    color:#fff; display:flex; justify-content:space-between; align-items:center;
+    text-align:left;">
+        <div style="font-weight:800; font-size:18px;">{title}</div>
+        <div style="font-weight:900; font-size:20px; background:#fff; color:#b31313;
+                    padding:6px 14px; border-radius:10px; min-width:90px;
+                    text-align:center;">{value}</div>
+    </div>
+"""
+
+# ---- Layout em duas colunas ----
+col1, col2 = st.columns(2)
+
+with col1:
+    st.markdown(card_style_claro.format(title="Volume de Transações", value=fmt_int(volume_trans)), unsafe_allow_html=True)
+    st.markdown(card_style_claro.format(title="Taxa de Transação × Acesso", value=f"{tx_trn_acc:.2f}"), unsafe_allow_html=True)
+    st.markdown(card_style_claro.format(title="% Ligação Direcionada Humano", value=f"{CR_SEGMENTO.get(segmento,0.5)*100:.2f}%"), unsafe_allow_html=True)
+    st.markdown(card_style_claro.format(title="% Retido Digital 72h", value=f"{retido*100:.2f}%"), unsafe_allow_html=True)
+
+with col2:
+    st.markdown(card_style_claro.format(title="Volume Ligações Evitadas Humano", value=fmt_int(cr_evitado_floor)), unsafe_allow_html=True)
+    st.markdown(card_style_claro.format(title="Volume de Acessos", value=fmt_int(vol_acessos)), unsafe_allow_html=True)
+    st.markdown(card_style_claro.format(title="Volume de MAU (CPF)", value=fmt_int(mau_cpf)), unsafe_allow_html=True)
+    st.markdown(card_style_claro.format(title="Volume de CR Evitado Estimado", value=fmt_int(cr_evitado_floor)), unsafe_allow_html=True)
+
+
+
 
    
     st.caption("Fórmulas: Acessos = Transações ÷ (Tx Transações/Acesso).  MAU = Transações ÷ (Transações/Usuários Únicos).  CR Evitado = Acessos × CR × %Retido.")
@@ -353,6 +387,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
