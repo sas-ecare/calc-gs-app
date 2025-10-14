@@ -186,20 +186,19 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         </div>
     """
 
-    # ---- Card estilo B: Dourado premium (lado direito) ----
+    # ---- Card estilo A: Vermelho institucional (lado esquerdo) ----
     card_claro_darkred = """
         <div style="width:460px; padding:18px 24px; margin:12px 0;
         background:darkred;
-        border-radius:16px; box-shadow:0 4px 10px rgba(255,195,60,.25);
-        color:#5a2e00; display:flex; justify-content:space-between; align-items:center;
+        border-radius:16px; box-shadow:0 4px 10px rgba(139,0,0,.25);
+        color:#fff; display:flex; justify-content:space-between; align-items:center;
         text-align:left;">
             <div style="font-weight:800; font-size:18px;">{title}</div>
-            <div style="font-weight:900; font-size:20px; background:#fff; color:#d35400;
+            <div style="font-weight:900; font-size:20px; background:#fff; color:#b31313;
                         padding:6px 14px; border-radius:10px; min-width:90px;
                         text-align:center;">{value}</div>
         </div>
     """
-
     # ---- Layout em duas colunas ----
     col1, col2 = st.columns(2, gap="large")
 
@@ -357,6 +356,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
