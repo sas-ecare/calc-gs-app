@@ -229,7 +229,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
 
 
     st.markdown("---")
-st.markdown("### 📊 Resultados Gerais")
+    st.markdown("### 📊 Resultados Gerais 2")
 
 # ---- Estilo único (vermelho Claro SA) ----
 card_style_claro = """
@@ -387,6 +387,7 @@ with col2:
         file_name="simulacao_cr.xlsx",
         mime="application/vnd.ms-excel"
     )
+
 
 
 
