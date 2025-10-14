@@ -379,15 +379,15 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
 
     # =================== ANÁLISE ESTATÍSTICA / DATA SCIENCE ===================
     with st.expander("🔍 Estatística & Ciência de Dadoss", expanded=False):
-    st.markdown("---")
-    st.markdown("## 📊🔬 Análise Estatística & Ciência de Dados")
+        st.markdown("---")
+        st.markdown("## 📊🔬 Análise Estatística & Ciência de Dados")
 
-    if not df_lote.empty:
+        if not df_lote.empty:
         # Estatísticas descritivas
-        desc = df_lote[["Volume Acessos", "Volume CR Evitado", "% CR", "% Retido"]].describe().T
-        desc["CV (%)"] = (desc["std"] / desc["mean"] * 100).round(2)
-        st.markdown("### 📈 Estatísticas Descritivas por Indicador")
-        st.dataframe(desc[["mean", "std", "min", "25%", "50%", "75%", "max", "CV (%)"]],
+            desc = df_lote[["Volume Acessos", "Volume CR Evitado", "% CR", "% Retido"]].describe().T
+            desc["CV (%)"] = (desc["std"] / desc["mean"] * 100).round(2)
+            st.markdown("### 📈 Estatísticas Descritivas por Indicador")
+            st.dataframe(desc[["mean", "std", "min", "25%", "50%", "75%", "max", "CV (%)"]],
                      use_container_width=False)
 
         # Correlação
@@ -428,6 +428,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         #st.plotly_chart(fig_box, use_container_width=False)
     #else:
      #   st.info("Sem dados disponíveis para análise estatística neste cenário.")
+
 
 
 
