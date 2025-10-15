@@ -6,3 +6,5 @@ plotly
 Pillow
 xlsxwriter
 python-dotenv
+networkx
+
