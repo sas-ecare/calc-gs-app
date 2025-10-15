@@ -511,135 +511,123 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
             st.plotly_chart(fig_box, use_container_width=False)
     
                 # =========================
-        # 🔗 CORRELAÇÃO ENTRE DIMENSÕES E MÉTRICAS (REDE AVANÇADA)
+                # =========================
+        # 🌐 REDE DE CORRELAÇÕES (MELHORADA)
         # =========================
-        st.markdown("### 🕸️ Mapa de Correlações Avançado (Dimensões × Métricas)")
+        st.markdown("### 🌐 Mapa de Correlações Hierarquizado – Subcanais, Tribos e Indicadores")
         st.markdown("""
         <p style='font-size:15px; color:#444; text-align:justify;'>
-        Este mapa de rede mostra a relação entre <b>Subcanais</b>, <b>Tribo</b> e os indicadores numéricos 
-        (<i>Acessos, CR Evitado, % Retido e % CR</i>).  
-        A espessura e a cor das linhas indicam a força da correlação, enquanto o tamanho do nó reflete 
-        sua importância (número de conexões relevantes).
+        Este gráfico exibe uma rede de conexões entre <b>Subcanais</b>, <b>Tribos</b> e <b>Indicadores Numéricos</b>.  
+        As cores e o tamanho dos nós representam o tipo e a importância (grau de conexão).  
+        Linhas mais grossas indicam correlações mais fortes (|r| ≥ 0.3).
         </p>
         """, unsafe_allow_html=True)
 
-        # Prepara base simplificada (média por Subcanal e Tribo)
+        import networkx as nx
+
+        # Prepara base consolidada (médias por subcanal/tribo)
         df_net = df_lote.groupby(["Subcanal", "Tribo"], as_index=False)[
             ["Volume Acessos", "Volume CR Evitado", "% Retido", "% CR"]
         ].mean()
 
-        # Calcula matriz de correlação (numérica)
+        # Cria correlação entre métricas
         corr_matrix = df_net[["Volume Acessos", "Volume CR Evitado", "% Retido", "% CR"]].corr()
 
-        # Normaliza colunas de texto (para conexões)
-        subcanal_nodes = df_net["Subcanal"].unique().tolist()
-        tribo_nodes = df_net["Tribo"].unique().tolist()
+        # Cria grafo
+        G = nx.Graph()
 
-        # ---------------------------
-        # Monta os "nodes" da rede
-        # ---------------------------
-        nodes = []
-        node_names = []
+        # Adiciona nós de métricas
+        for m in corr_matrix.columns:
+            G.add_node(m, tipo="Métrica")
 
-        # Nó de métricas
-        metricas = ["Volume Acessos", "Volume CR Evitado", "% Retido", "% CR"]
-        for m in metricas:
-            nodes.append(dict(name=m, group="Métrica"))
-            node_names.append(m)
-
-        # Nós de Subcanais e Tribos
-        for s in subcanal_nodes:
-            nodes.append(dict(name=s, group="Subcanal"))
-            node_names.append(s)
-        for t in tribo_nodes:
-            nodes.append(dict(name=t, group="Tribo"))
-            node_names.append(t)
-
-        # ---------------------------
-        # Monta as conexões (arestas)
-        # ---------------------------
-        edges = []
+        # Adiciona nós de Subcanais e Tribos
         for _, row in df_net.iterrows():
             sub = row["Subcanal"]
             tri = row["Tribo"]
+            G.add_node(sub, tipo="Subcanal")
+            G.add_node(tri, tipo="Tribo")
 
-            for m in metricas:
-                value = row[m]
-                # Correlação ponderada com CR Evitado como referência
-                corr_value = np.corrcoef(df_net[m], df_net["Volume CR Evitado"])[0, 1]
-                if np.isfinite(corr_value):
-                    edges.append({
-                        "source": sub,
-                        "target": m,
-                        "corr": corr_value
-                    })
-                    edges.append({
-                        "source": tri,
-                        "target": m,
-                        "corr": corr_value
-                    })
+            # Conecta Subcanal e Tribo às métricas com base na correlação real
+            for m in corr_matrix.columns:
+                corr_val = np.corrcoef(df_net[m], df_net["Volume CR Evitado"])[0, 1]
+                if np.isfinite(corr_val) and abs(corr_val) >= 0.3:
+                    G.add_edge(sub, m, weight=abs(corr_val))
+                    G.add_edge(tri, m, weight=abs(corr_val))
 
-        # ---------------------------
-        # Desenha com Plotly (Force Layout simplificado)
-        # ---------------------------
-        import networkx as nx
+        # Layout mais espaçado e legível
+        pos = nx.spring_layout(G, k=0.9, iterations=120, seed=42)
 
-        G = nx.Graph()
-        for n in nodes:
-            G.add_node(n["name"], group=n["group"])
-        for e in edges:
-            G.add_edge(e["source"], e["target"], weight=abs(e["corr"]))
+        # Configura atributos visuais
+        node_x, node_y, node_text, node_color, node_size = [], [], [], [], []
 
-        pos = nx.spring_layout(G, k=0.8, iterations=100, seed=42)
+        for n, data in G.nodes(data=True):
+            x, y = pos[n]
+            node_x.append(x)
+            node_y.append(y)
+            node_text.append(n)
+            deg = G.degree(n)
+            node_size.append(10 + 4 * deg)
 
-        edge_x, edge_y, edge_colors, edge_widths = [], [], [], []
-        for e in G.edges(data=True):
-            x0, y0 = pos[e[0]]
-            x1, y1 = pos[e[1]]
+            if data["tipo"] == "Métrica":
+                node_color.append("#ffffff")  # branco
+            elif data["tipo"] == "Tribo":
+                node_color.append("#8B0000")  # vermelho escuro
+            else:
+                node_color.append("#ff7f7f")  # vermelho claro
+
+        # Cria arestas
+        edge_x, edge_y, edge_width, edge_color = [], [], [], []
+        for u, v, d in G.edges(data=True):
+            x0, y0 = pos[u]
+            x1, y1 = pos[v]
             edge_x += [x0, x1, None]
             edge_y += [y0, y1, None]
-            edge_colors.append("#b31313" if e[2]["weight"] > 0.5 else "#1f77b4")
-            edge_widths.append(2 + 6 * e[2]["weight"])
+            edge_width.append(2 + 5 * d["weight"])
+            edge_color.append("#b31313" if d["weight"] > 0.6 else "#c84e4e")
 
-        # Cria visualização
-        fig_net_adv = go.Figure()
+        # Monta figura Plotly
+        fig_net = go.Figure()
 
         # Arestas
-        fig_net_adv.add_trace(go.Scatter(
+        fig_net.add_trace(go.Scatter(
             x=edge_x, y=edge_y, mode="lines",
-            line=dict(width=edge_widths[0], color="#aaa"),
-            hoverinfo="none", opacity=0.5
+            line=dict(width=1.5, color="#bbb"),
+            opacity=0.5, hoverinfo="none"
         ))
 
         # Nós
-        node_x = [pos[n][0] for n in G.nodes()]
-        node_y = [pos[n][1] for n in G.nodes()]
-        node_text = list(G.nodes())
-        node_color = [
-            "#b31313" if G.nodes[n]["group"] == "Métrica"
-            else "#ff8080" if G.nodes[n]["group"] == "Subcanal"
-            else "#ffcccb" for n in G.nodes()
-        ]
-        node_size = [12 + 10 * G.degree(n) for n in G.nodes()]
-
-        fig_net_adv.add_trace(go.Scatter(
+        fig_net.add_trace(go.Scatter(
             x=node_x, y=node_y, mode="markers+text",
             text=node_text, textposition="top center",
             hoverinfo="text",
-            marker=dict(size=node_size, color=node_color,
-                        line=dict(width=1, color="#333")),
+            marker=dict(
+                size=node_size,
+                color=node_color,
+                line=dict(width=2, color="#b31313")
+            ),
             opacity=0.9
         ))
 
-        fig_net_adv.update_layout(
-            title="🌐 Rede de Correlações - Subcanal, Tribo e Indicadores",
-            showlegend=False,
+        fig_net.update_layout(
+            title="🕸️ Rede de Correlações – Subcanais, Tribos e Indicadores",
             template="plotly_white",
+            showlegend=False,
             xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
             yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            height=650,
-            margin=dict(l=10, r=10, t=80, b=10)
+            height=750,
+            margin=dict(l=0, r=0, t=80, b=0)
         )
 
-        st.plotly_chart(fig_net_adv, use_container_width=True)
+        st.plotly_chart(fig_net, use_container_width=True)
+
+        # Legenda
+        st.markdown("""
+        <div style='font-size:14px; color:#444;'>
+        🔴 <b>Subcanais</b> &nbsp;&nbsp;
+        🟥 <b>Tribos</b> &nbsp;&nbsp;
+        ⚪ <b>Métricas</b> (Acessos, CR, Retido)  
+        Linhas espessas → correlações fortes (|r| ≥ 0.6)
+        </div>
+        """, unsafe_allow_html=True)
+
 
