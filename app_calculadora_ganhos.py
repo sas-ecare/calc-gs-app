@@ -509,56 +509,57 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
                                   template="plotly_white", height=350)
             st.plotly_chart(fig_box, use_container_width=False)
     
-            # --- Correlações completas (Network Graph) ---
-            st.markdown("### 🕸️ Rede de Correlações Entre Variáveis")
-            st.markdown("""
-            <p style='font-size:15px; color:#444; text-align:justify;'>
-            Este gráfico mostra a força das correlações entre todos os indicadores numéricos da simulação. 
-            Linhas mais grossas representam correlações mais fortes — positivas em vermelho e negativas em azul.
-            </p>
-            """, unsafe_allow_html=True)
-    
-            numeric_cols = ["Volume Acessos", "Volume CR Evitado", "% CR", "% Retido"]
-            corr_matrix = df_lote[numeric_cols].corr()
-    
-            edges = []
-            for i, col1 in enumerate(numeric_cols):
-                for j, col2 in enumerate(numeric_cols):
-                    if i < j:
-                        corr_value = corr_matrix.loc[col1, col2]
-                        edges.append({
-                            "x": [i, j],
-                            "y": [0, 0],
-                            "value": corr_value
-                        })
-    
-            # Network com plotly (simples e elegante)
-            fig_net = go.Figure()
-            for edge in edges:
-                color = "#b31313" if edge["value"] >= 0 else "#1f77b4"
-                width = abs(edge["value"]) * 10
-                fig_net.add_trace(go.Scatter(
-                    x=edge["x"], y=edge["y"],
-                    mode="lines+markers+text",
-                    line=dict(width=width, color=color),
-                    marker=dict(size=20, color="#fff", line=dict(width=2, color=color)),
-                    text=[numeric_cols[edge["x"][0]], numeric_cols[edge["x"][1]]],
-                    textposition="top center",
-                    hovertext=f"Correlação: {edge['value']:.2f}",
-                    hoverinfo="text"
-                ))
-            fig_net.update_layout(
-                showlegend=False,
-                title="Rede de Correlações entre Indicadores",
-                template="plotly_white",
-                xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                height=400
-            )
-            st.plotly_chart(fig_net, use_container_width=False)
-    
-        else:
-            st.info("Sem dados disponíveis para análise estatística neste cenário.")
+                    # --- Correlações completas (Network Graph) ---
+        st.markdown("### 🕸️ Rede de Correlações Entre Variáveis")
+        st.markdown("""
+        <p style='font-size:15px; color:#444; text-align:justify;'>
+        Este gráfico mostra a força das correlações entre todos os indicadores numéricos da simulação. 
+        Linhas mais grossas representam correlações mais fortes — positivas em vermelho e negativas em azul.
+        </p>
+        """, unsafe_allow_html=True)
+
+        numeric_cols = ["Volume Acessos", "Volume CR Evitado", "% CR", "% Retido"]
+        corr_matrix = df_lote[numeric_cols].corr()
+
+        fig_net = go.Figure()
+
+        for i, col1 in enumerate(numeric_cols):
+            for j, col2 in enumerate(numeric_cols):
+                if i < j:
+                    corr_value = corr_matrix.loc[col1, col2]
+
+                    # pula correlações inválidas (NaN, None)
+                    if not np.isfinite(corr_value):
+                        continue
+
+                    # define espessura e cor da linha
+                    width = max(abs(corr_value) * 10, 0.5)  # garante >= 0.5
+                    color = "#b31313" if corr_value >= 0 else "#1f77b4"
+
+                    fig_net.add_trace(go.Scatter(
+                        x=[i, j],
+                        y=[0, 0],
+                        mode="lines+markers+text",
+                        line=dict(width=width, color=color),
+                        marker=dict(size=22, color="#fff", line=dict(width=2, color=color)),
+                        text=[col1, col2],
+                        textposition="top center",
+                        hovertext=f"{col1} ↔ {col2}<br>Correlação: {corr_value:.2f}",
+                        hoverinfo="text"
+                    ))
+
+        fig_net.update_layout(
+            showlegend=False,
+            title="Rede de Correlações entre Indicadores",
+            template="plotly_white",
+            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            height=420,
+            margin=dict(l=0, r=0, t=60, b=0)
+        )
+
+        st.plotly_chart(fig_net, use_container_width=False)
+
 
 
 
