@@ -141,15 +141,24 @@ def tx_trn_por_acesso(vol_71, vol_6):
     return max(vol_71 / vol_6, 1.0)
 
 
+
 def tx_uu_por_cpf(vol_71, vol_41):
     """
-    Calcula a taxa Transações ÷ Usuários Únicos CPF com fallback para DEFAULT_TX_UU_CPF.
+    Calcula a taxa Transações ÷ Usuários Únicos CPF.
+    Aplica fallback padrão (DEFAULT_TX_UU_CPF) caso haja zeros ou valores inválidos.
     """
-    if vol_71 <= 0:
-        
+    # Evita divisões por zero e garante valor mínimo
+    if vol_71 <= 0 or vol_41 <= 0:
         return DEFAULT_TX_UU_CPF
-        
-    return vol_71 / vol_41
+
+    try:
+        taxa = vol_71 / vol_41
+        # Se taxa for absurda ou negativa, retorna padrão
+        if not np.isfinite(taxa) or taxa <= 0:
+            return DEFAULT_TX_UU_CPF
+        return taxa
+    except ZeroDivisionError:
+        return DEFAULT_TX_UU_CPF
 
 # ====================== FILTROS ======================
 st.markdown("## 🔎 Filtros de Cenário")
@@ -429,6 +438,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         #st.plotly_chart(fig_box, use_container_width=False)
     #else:
      #   st.info("Sem dados disponíveis para análise estatística neste cenário.")
+
 
 
 
