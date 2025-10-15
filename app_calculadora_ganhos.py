@@ -509,66 +509,135 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
                                   template="plotly_white", height=350)
             st.plotly_chart(fig_box, use_container_width=False)
     
-                    # --- Correlações completas (Network Graph) ---
-        st.markdown("### 🕸️ Rede de Correlações Entre Variáveis")
+                # =========================
+        # 🔗 CORRELAÇÃO ENTRE DIMENSÕES E MÉTRICAS (REDE AVANÇADA)
+        # =========================
+        st.markdown("### 🕸️ Mapa de Correlações Avançado (Dimensões × Métricas)")
         st.markdown("""
         <p style='font-size:15px; color:#444; text-align:justify;'>
-        Este gráfico mostra a força das correlações entre todos os indicadores numéricos da simulação. 
-        Linhas mais grossas representam correlações mais fortes — positivas em vermelho e negativas em azul.
+        Este mapa de rede mostra a relação entre <b>Subcanais</b>, <b>Tribo</b> e os indicadores numéricos 
+        (<i>Acessos, CR Evitado, % Retido e % CR</i>).  
+        A espessura e a cor das linhas indicam a força da correlação, enquanto o tamanho do nó reflete 
+        sua importância (número de conexões relevantes).
         </p>
         """, unsafe_allow_html=True)
 
-        numeric_cols = ["Volume Acessos", "Volume CR Evitado", "% CR", "% Retido"]
-        corr_matrix = df_lote[numeric_cols].corr()
+        # Prepara base simplificada (média por Subcanal e Tribo)
+        df_net = df_lote.groupby(["Subcanal", "Tribo"], as_index=False)[
+            ["Volume Acessos", "Volume CR Evitado", "% Retido", "% CR"]
+        ].mean()
 
-        fig_net = go.Figure()
+        # Calcula matriz de correlação (numérica)
+        corr_matrix = df_net[["Volume Acessos", "Volume CR Evitado", "% Retido", "% CR"]].corr()
 
-        for i, col1 in enumerate(numeric_cols):
-            for j, col2 in enumerate(numeric_cols):
-                if i < j:
-                    corr_value = corr_matrix.loc[col1, col2]
+        # Normaliza colunas de texto (para conexões)
+        subcanal_nodes = df_net["Subcanal"].unique().tolist()
+        tribo_nodes = df_net["Tribo"].unique().tolist()
 
-                    # pula correlações inválidas (NaN, None)
-                    if not np.isfinite(corr_value):
-                        continue
+        # ---------------------------
+        # Monta os "nodes" da rede
+        # ---------------------------
+        nodes = []
+        node_names = []
 
-                    # define espessura e cor da linha
-                    width = max(abs(corr_value) * 10, 0.5)  # garante >= 0.5
-                    color = "#b31313" if corr_value >= 0 else "#1f77b4"
+        # Nó de métricas
+        metricas = ["Volume Acessos", "Volume CR Evitado", "% Retido", "% CR"]
+        for m in metricas:
+            nodes.append(dict(name=m, group="Métrica"))
+            node_names.append(m)
 
-                    fig_net.add_trace(go.Scatter(
-                        x=[i, j],
-                        y=[0, 0],
-                        mode="lines+markers+text",
-                        line=dict(width=width, color=color),
-                        marker=dict(size=22, color="#fff", line=dict(width=2, color=color)),
-                        text=[col1, col2],
-                        textposition="top center",
-                        hovertext=f"{col1} ↔ {col2}<br>Correlação: {corr_value:.2f}",
-                        hoverinfo="text"
-                    ))
+        # Nós de Subcanais e Tribos
+        for s in subcanal_nodes:
+            nodes.append(dict(name=s, group="Subcanal"))
+            node_names.append(s)
+        for t in tribo_nodes:
+            nodes.append(dict(name=t, group="Tribo"))
+            node_names.append(t)
 
-        fig_net.update_layout(
+        # ---------------------------
+        # Monta as conexões (arestas)
+        # ---------------------------
+        edges = []
+        for _, row in df_net.iterrows():
+            sub = row["Subcanal"]
+            tri = row["Tribo"]
+
+            for m in metricas:
+                value = row[m]
+                # Correlação ponderada com CR Evitado como referência
+                corr_value = np.corrcoef(df_net[m], df_net["Volume CR Evitado"])[0, 1]
+                if np.isfinite(corr_value):
+                    edges.append({
+                        "source": sub,
+                        "target": m,
+                        "corr": corr_value
+                    })
+                    edges.append({
+                        "source": tri,
+                        "target": m,
+                        "corr": corr_value
+                    })
+
+        # ---------------------------
+        # Desenha com Plotly (Force Layout simplificado)
+        # ---------------------------
+        import networkx as nx
+
+        G = nx.Graph()
+        for n in nodes:
+            G.add_node(n["name"], group=n["group"])
+        for e in edges:
+            G.add_edge(e["source"], e["target"], weight=abs(e["corr"]))
+
+        pos = nx.spring_layout(G, k=0.8, iterations=100, seed=42)
+
+        edge_x, edge_y, edge_colors, edge_widths = [], [], [], []
+        for e in G.edges(data=True):
+            x0, y0 = pos[e[0]]
+            x1, y1 = pos[e[1]]
+            edge_x += [x0, x1, None]
+            edge_y += [y0, y1, None]
+            edge_colors.append("#b31313" if e[2]["weight"] > 0.5 else "#1f77b4")
+            edge_widths.append(2 + 6 * e[2]["weight"])
+
+        # Cria visualização
+        fig_net_adv = go.Figure()
+
+        # Arestas
+        fig_net_adv.add_trace(go.Scatter(
+            x=edge_x, y=edge_y, mode="lines",
+            line=dict(width=edge_widths[0], color="#aaa"),
+            hoverinfo="none", opacity=0.5
+        ))
+
+        # Nós
+        node_x = [pos[n][0] for n in G.nodes()]
+        node_y = [pos[n][1] for n in G.nodes()]
+        node_text = list(G.nodes())
+        node_color = [
+            "#b31313" if G.nodes[n]["group"] == "Métrica"
+            else "#ff8080" if G.nodes[n]["group"] == "Subcanal"
+            else "#ffcccb" for n in G.nodes()
+        ]
+        node_size = [12 + 10 * G.degree(n) for n in G.nodes()]
+
+        fig_net_adv.add_trace(go.Scatter(
+            x=node_x, y=node_y, mode="markers+text",
+            text=node_text, textposition="top center",
+            hoverinfo="text",
+            marker=dict(size=node_size, color=node_color,
+                        line=dict(width=1, color="#333")),
+            opacity=0.9
+        ))
+
+        fig_net_adv.update_layout(
+            title="🌐 Rede de Correlações - Subcanal, Tribo e Indicadores",
             showlegend=False,
-            title="Rede de Correlações entre Indicadores",
             template="plotly_white",
             xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
             yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            height=420,
-            margin=dict(l=0, r=0, t=60, b=0)
+            height=650,
+            margin=dict(l=10, r=10, t=80, b=10)
         )
 
-        st.plotly_chart(fig_net, use_container_width=False)
-
-
-
-
-
-
-
-
-
-
-
-
-
+        st.plotly_chart(fig_net_adv, use_container_width=True)
