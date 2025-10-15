@@ -145,9 +145,10 @@ def tx_uu_por_cpf(vol_71, vol_41):
     """
     Calcula a taxa Transações ÷ Usuários Únicos CPF com fallback para DEFAULT_TX_UU_CPF.
     """
-    if vol_41 <= 0:
+    if vol_71 <= 0:
         
         return DEFAULT_TX_UU_CPF
+        
     return vol_71 / vol_41
 
 # ====================== FILTROS ======================
@@ -428,6 +429,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         #st.plotly_chart(fig_box, use_container_width=False)
     #else:
      #   st.info("Sem dados disponíveis para análise estatística neste cenário.")
+
 
 
 
