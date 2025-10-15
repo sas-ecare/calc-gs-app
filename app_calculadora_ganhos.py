@@ -137,7 +137,7 @@ def tx_trn_por_acesso(vol_71, vol_6):
     """
     if vol_71 <= 0 or vol_6 <= 0:
         
-        return 1.0
+        return 1.75
     return max(vol_71 / vol_6, 1.0)
 
 
@@ -428,6 +428,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         #st.plotly_chart(fig_box, use_container_width=False)
     #else:
      #   st.info("Sem dados disponíveis para análise estatística neste cenário.")
+
 
 
 
