@@ -513,12 +513,13 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
                 # =========================
                 # =========================
                 # =========================
-        # 🌐 REDE DE CORRELAÇÕES (MELHORADA)
+                # =========================
+        # 🌐 REDE DE CORRELAÇÕES (POR CANAL)
         # =========================
-        st.markdown("### 🌐 Mapa de Correlações Hierarquizado – Subcanais, Tribos e Indicadores")
+        st.markdown("### 🌐 Mapa de Correlações Hierarquizado – Canais, Tribos e Indicadores")
         st.markdown("""
         <p style='font-size:15px; color:#444; text-align:justify;'>
-        Este gráfico exibe uma rede de conexões entre <b>Subcanais</b>, <b>Tribos</b> e <b>Indicadores Numéricos</b>.  
+        Este gráfico exibe uma rede de conexões entre <b>Canais</b>, <b>Tribos</b> e <b>Indicadores Numéricos</b>.  
         As cores e o tamanho dos nós representam o tipo e a importância (grau de conexão).  
         Linhas mais grossas indicam correlações mais fortes (|r| ≥ 0.3).
         </p>
@@ -526,10 +527,14 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
 
         import networkx as nx
 
-        # Prepara base consolidada (médias por subcanal/tribo)
-        df_net = df_lote.groupby(["Subcanal", "Tribo"], as_index=False)[
-            ["Volume Acessos", "Volume CR Evitado", "% Retido", "% CR"]
-        ].mean()
+        # Prepara base consolidada (médias por Canal/Tribo)
+        df_net = df_lote.groupby(["Tribo"], as_index=False).mean(numeric_only=True)
+        if "Canal" not in df_lote.columns:
+            st.warning("⚠️ Coluna 'Canal' não encontrada na base. Verifique se o campo NM_CANAL está presente.")
+        else:
+            df_net = df_lote.groupby(["Canal", "Tribo"], as_index=False)[
+                ["Volume Acessos", "Volume CR Evitado", "% Retido", "% CR"]
+            ].mean()
 
         # Cria correlação entre métricas
         corr_matrix = df_net[["Volume Acessos", "Volume CR Evitado", "% Retido", "% CR"]].corr()
@@ -541,18 +546,18 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         for m in corr_matrix.columns:
             G.add_node(m, tipo="Métrica")
 
-        # Adiciona nós de Subcanais e Tribos
+        # Adiciona nós de Canais e Tribos
         for _, row in df_net.iterrows():
-            sub = row["Subcanal"]
+            canal = row["Canal"]
             tri = row["Tribo"]
-            G.add_node(sub, tipo="Subcanal")
+            G.add_node(canal, tipo="Canal")
             G.add_node(tri, tipo="Tribo")
 
-            # Conecta Subcanal e Tribo às métricas com base na correlação real
+            # Conecta Canal e Tribo às métricas com base na correlação real
             for m in corr_matrix.columns:
                 corr_val = np.corrcoef(df_net[m], df_net["Volume CR Evitado"])[0, 1]
                 if np.isfinite(corr_val) and abs(corr_val) >= 0.3:
-                    G.add_edge(sub, m, weight=abs(corr_val))
+                    G.add_edge(canal, m, weight=abs(corr_val))
                     G.add_edge(tri, m, weight=abs(corr_val))
 
         # Layout mais espaçado e legível
@@ -574,17 +579,15 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
             elif data["tipo"] == "Tribo":
                 node_color.append("#8B0000")  # vermelho escuro
             else:
-                node_color.append("#ff7f7f")  # vermelho claro
+                node_color.append("#ff7f7f")  # canal - vermelho claro
 
         # Cria arestas
-        edge_x, edge_y, edge_width, edge_color = [], [], [], []
-        for u, v, d in G.edges(data=True):
+        edge_x, edge_y = [], []
+        for u, v in G.edges():
             x0, y0 = pos[u]
             x1, y1 = pos[v]
             edge_x += [x0, x1, None]
             edge_y += [y0, y1, None]
-            edge_width.append(2 + 5 * d["weight"])
-            edge_color.append("#b31313" if d["weight"] > 0.6 else "#c84e4e")
 
         # Monta figura Plotly
         fig_net = go.Figure()
@@ -592,7 +595,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         # Arestas
         fig_net.add_trace(go.Scatter(
             x=edge_x, y=edge_y, mode="lines",
-            line=dict(width=1.5, color="#bbb"),
+            line=dict(width=1.5, color="#aaa"),
             opacity=0.5, hoverinfo="none"
         ))
 
@@ -610,7 +613,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         ))
 
         fig_net.update_layout(
-            title="🕸️ Rede de Correlações – Subcanais, Tribos e Indicadores",
+            title="🕸️ Rede de Correlações – Canais, Tribos e Indicadores",
             template="plotly_white",
             showlegend=False,
             xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
@@ -624,7 +627,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         # Legenda
         st.markdown("""
         <div style='font-size:14px; color:#444;'>
-        🔴 <b>Subcanais</b> &nbsp;&nbsp;
+        🔴 <b>Canais</b> &nbsp;&nbsp;
         🟥 <b>Tribos</b> &nbsp;&nbsp;
         ⚪ <b>Métricas</b> (Acessos, CR, Retido)  
         Linhas espessas → correlações fortes (|r| ≥ 0.6)
