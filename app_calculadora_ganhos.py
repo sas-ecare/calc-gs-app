@@ -512,6 +512,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     
                 # =========================
                 # =========================
+                # =========================
         # 🌐 REDE DE CORRELAÇÕES (MELHORADA)
         # =========================
         st.markdown("### 🌐 Mapa de Correlações Hierarquizado – Subcanais, Tribos e Indicadores")
@@ -629,5 +630,3 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         Linhas espessas → correlações fortes (|r| ≥ 0.6)
         </div>
         """, unsafe_allow_html=True)
-
-
