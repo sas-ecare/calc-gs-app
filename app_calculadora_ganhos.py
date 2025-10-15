@@ -439,6 +439,129 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     #else:
      #   st.info("Sem dados disponíveis para análise estatística neste cenário.")
 
+    with st.expander("🔍 Diagnóstico de Premissas", expanded=False):
+
+            # =================== ANÁLISE ESTATÍSTICA / CIÊNCIA DE DADOS (VERSÃO AVANÇADA) ===================
+        st.markdown("---")
+        st.markdown("## 📊🔬 Análise Estatística & Ciência de Dados")
+
+        if not df_lote.empty:
+            # --- Estatísticas Descritivas ---
+            st.markdown("### 📈 Estatísticas Descritivas por Indicador")
+            st.markdown("""
+            <p style='font-size:15px; color:#444; text-align:justify;'>
+            Esta tabela resume os principais indicadores estatísticos de cada métrica simulada. 
+            <b>Média</b> e <b>Mediana</b> mostram o comportamento central; 
+            <b>Desvio Padrão</b> e <b>Coeficiente de Variação (CV%)</b> indicam a dispersão dos dados. 
+            Um CV acima de <b>30%</b> sugere alta variabilidade entre os subcanais — 
+            sinalizando oportunidades de padronização ou ganhos potenciais de performance.
+            </p>
+            """, unsafe_allow_html=True)
+    
+            desc = df_lote[["Volume Acessos", "Volume CR Evitado", "% CR", "% Retido"]].describe().T
+            desc["CV (%)"] = (desc["std"] / desc["mean"] * 100).round(2)
+            st.dataframe(desc[["mean", "50%", "std", "min", "max", "CV (%)"]],
+                         use_container_width=False)
+    
+            # --- Correlação de Pearson entre Acessos e CR Evitado ---
+            corr = df_lote[["Volume Acessos", "Volume CR Evitado"]].corr(method="pearson").iloc[0, 1]
+            interpret = (
+                "forte e positiva 📈" if corr > 0.7 else
+                "moderada 📊" if corr > 0.4 else
+                "fraca 🔹" if corr > 0.1 else
+                "nula ou negativa 🔻"
+            )
+    
+            st.markdown(f"""
+            ### 🔗 Correlação de Pearson (Acessos × CR Evitado)
+            <p style='font-size:15px; color:#444; text-align:justify;'>
+            A <b>Correlação de Pearson</b> mede a força e a direção da relação linear entre duas variáveis numéricas. 
+            O valor vai de -1 (relação inversa perfeita) a +1 (relação direta perfeita).  
+            No cenário atual e filtros aplicados, a correlação é <b>{corr:.2f}</b> → relação {interpret}.  
+            Ou seja, conforme o volume de acessos aumenta, o volume de CR evitado tende a crescer proporcionalmente.
+            </p>
+            """, unsafe_allow_html=True)
+    
+            # --- Dispersão Acessos × CR Evitado ---
+            fig_scatter = go.Figure()
+            fig_scatter.add_trace(go.Scatter(
+                x=df_lote["Volume Acessos"], y=df_lote["Volume CR Evitado"],
+                mode="markers+text", text=df_lote["Subcanal"],
+                textposition="top center", marker=dict(size=10, color="#b31313", opacity=0.7)
+            ))
+            fig_scatter.update_layout(
+                title="🔬 Relação entre Volume de Acessos e Volume CR Evitado",
+                xaxis_title="Volume de Acessos",
+                yaxis_title="Volume de CR Evitado",
+                template="plotly_white",
+                height=400
+            )
+            st.plotly_chart(fig_scatter, use_container_width=False)
+    
+            # --- Boxplot - Distribuição dos resultados ---
+            fig_box = go.Figure()
+            fig_box.add_trace(go.Box(
+                y=df_lote["Volume CR Evitado"], name="Distribuição CR Evitado",
+                boxmean=True, marker_color="#d01f1f"
+            ))
+            fig_box.update_layout(title="📦 Distribuição dos Volumes de CR Evitado",
+                                  yaxis_title="Volume CR Evitado",
+                                  template="plotly_white", height=350)
+            st.plotly_chart(fig_box, use_container_width=False)
+    
+            # --- Correlações completas (Network Graph) ---
+            st.markdown("### 🕸️ Rede de Correlações Entre Variáveis")
+            st.markdown("""
+            <p style='font-size:15px; color:#444; text-align:justify;'>
+            Este gráfico mostra a força das correlações entre todos os indicadores numéricos da simulação. 
+            Linhas mais grossas representam correlações mais fortes — positivas em vermelho e negativas em azul.
+            </p>
+            """, unsafe_allow_html=True)
+    
+            numeric_cols = ["Volume Acessos", "Volume CR Evitado", "% CR", "% Retido"]
+            corr_matrix = df_lote[numeric_cols].corr()
+    
+            edges = []
+            for i, col1 in enumerate(numeric_cols):
+                for j, col2 in enumerate(numeric_cols):
+                    if i < j:
+                        corr_value = corr_matrix.loc[col1, col2]
+                        edges.append({
+                            "x": [i, j],
+                            "y": [0, 0],
+                            "value": corr_value
+                        })
+    
+            # Network com plotly (simples e elegante)
+            fig_net = go.Figure()
+            for edge in edges:
+                color = "#b31313" if edge["value"] >= 0 else "#1f77b4"
+                width = abs(edge["value"]) * 10
+                fig_net.add_trace(go.Scatter(
+                    x=edge["x"], y=edge["y"],
+                    mode="lines+markers+text",
+                    line=dict(width=width, color=color),
+                    marker=dict(size=20, color="#fff", line=dict(width=2, color=color)),
+                    text=[numeric_cols[edge["x"][0]], numeric_cols[edge["x"][1]]],
+                    textposition="top center",
+                    hovertext=f"Correlação: {edge['value']:.2f}",
+                    hoverinfo="text"
+                ))
+            fig_net.update_layout(
+                showlegend=False,
+                title="Rede de Correlações entre Indicadores",
+                template="plotly_white",
+                xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                height=400
+            )
+            st.plotly_chart(fig_net, use_container_width=False)
+    
+        else:
+            st.info("Sem dados disponíveis para análise estatística neste cenário.")
+
+
+
 
 
 
