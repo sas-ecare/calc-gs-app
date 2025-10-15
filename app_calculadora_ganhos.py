@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+import networkx as nx
 
 # ====================== CONFIG ======================
 st.set_page_config(page_title="🖩 Calculadora de Ganhos", page_icon="📶", layout="wide")
@@ -641,3 +642,4 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         )
 
         st.plotly_chart(fig_net_adv, use_container_width=True)
+
