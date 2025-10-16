@@ -406,7 +406,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
             </p>
             """, unsafe_allow_html=True)
     
-            desc = df_lote[["Volume Acessos", "Volume CR Evitado", "% CR", "% Retido"]].describe().T
+            desc = df_lote[["Volume Acessos", "Volume CR Evitado"]].describe().T
             desc["CV (%)"] = (desc["std"] / desc["mean"] * 100).round(2)
             st.dataframe(desc[["mean", "50%", "std", "min", "max", "CV (%)"]],
                          use_container_width=False)
@@ -446,4 +446,5 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
             )
             st.plotly_chart(fig_scatter, use_container_width=False)
     
+
 
