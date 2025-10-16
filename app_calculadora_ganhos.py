@@ -365,7 +365,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
 
         # Exibe dataframe com colunas disponíveis
         colunas_disp = df_top.columns.tolist()
-        colunas_desejadas = ["Subcanal", "Tribo", "Volume de CR Evitado", "Acumulado %"]
+        colunas_desejadas = ["Subcanal", "Tribo", "Volume de CR Evitado"]
 
         # Corrige nome caso exista sem "de"
         if "Volume CR Evitado" in colunas_disp and "Volume de CR Evitado" not in colunas_disp:
@@ -392,60 +392,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
     with st.expander("🔍 Estatística & Ciência de Dadoss", expanded=False):
         st.markdown("---")
         st.markdown("## 📊🔬 Análise Estatística & Ciência de Dados")
-
-        if not df_lote.empty:
-        # Estatísticas descritivas
-            desc = df_lote[["Volume Acessos", "Volume CR Evitado", "% CR", "% Retido"]].describe().T
-            desc["CV (%)"] = (desc["std"] / desc["mean"] * 100).round(2)
-            st.markdown("### 📈 Estatísticas Descritivas por Indicador")
-            st.dataframe(desc[["mean", "std", "min", "25%", "50%", "75%", "max", "CV (%)"]],
-                     use_container_width=False)
-
-        # Correlação
-        corr = df_lote[["Volume Acessos", "Volume CR Evitado"]].corr(method="pearson").iloc[0,1]
-        interpret = (
-            "forte e positiva 📈" if corr > 0.7 else
-            "moderada 📊" if corr > 0.4 else
-            "fraca 🔹" if corr > 0.1 else
-            "nula ou negativa 🔻"
-        )
-        st.markdown(f"**🔗 Correlação de Pearson (Acessos × CR Evitado):** {corr:.2f} → relação {interpret}")
-
-        # Dispersão Acessos × CR Evitado
-        fig_scatter = go.Figure()
-        fig_scatter.add_trace(go.Scatter(
-            x=df_lote["Volume Acessos"], y=df_lote["Volume CR Evitado"],
-            mode="markers+text", text=df_lote["Subcanal"],
-            textposition="top center", marker=dict(size=8, color="#b31313", opacity=0.7)
-        ))
-        fig_scatter.update_layout(
-            title="🔬 Relação entre Volume de Acessos e Volume CR Evitado",
-            xaxis_title="Volume de Acessos",
-            yaxis_title="Volume de CR Evitado",
-            template="plotly_white",
-            height=400
-        )
-        st.plotly_chart(fig_scatter, use_container_width=False)
-
-        # Boxplot - Distribuição dos resultados
-        #fig_box = go.Figure()
-        #fig_box.add_trace(go.Box(
-         #   y=df_lote["Volume CR Evitado"], name="Distribuição CR Evitado",
-          #  boxmean=True, marker_color="#d01f1f"
-        #))
-        #fig_box.update_layout(title="📦 Distribuição dos Volumes de CR Evitado",
-         #                     yaxis_title="Volume CR Evitado",
-          #                    template="plotly_white", height=350)
-        #st.plotly_chart(fig_box, use_container_width=False)
-    #else:
-     #   st.info("Sem dados disponíveis para análise estatística neste cenário.")
-
-    with st.expander("🔍 Diagnóstico de Premissas", expanded=False):
-
-            # =================== ANÁLISE ESTATÍSTICA / CIÊNCIA DE DADOS (VERSÃO AVANÇADA) ===================
-        st.markdown("---")
-        st.markdown("## 📊🔬 Análise Estatística & Ciência de Dados")
-
+                  
         if not df_lote.empty:
             # --- Estatísticas Descritivas ---
             st.markdown("### 📈 Estatísticas Descritivas por Indicador")
@@ -633,3 +580,4 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
         Linhas espessas → correlações fortes (|r| ≥ 0.6)
         </div>
         """, unsafe_allow_html=True)
+
