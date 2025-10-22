@@ -66,7 +66,9 @@ def normalize_text(s):
     return s.strip()
 
 # ====================== BASE ======================
-URL = "https://raw.githubusercontent.com/gustavo3-freitas/calculadora-ganhos-claro/main/base/Tabela_Performance_v2.xlsx"
+#URL = "https://raw.githubusercontent.com/gustavo3-freitas/calculadora-ganhos-claro/main/base/Tabela_Performance_v2.xlsx"
+
+URL="https://corpclarobr.sharepoint.com/:x:/r/sites/SquadAutoAtendimento/_layouts/15/Doc.aspx?sourcedoc=%7B848569AE-E126-4B27-B786-7DFEC35AFE22%7D&file=NOVO%20FORECAST%202025%20-%20KPI%20-%20Final.xlsx&action=default&mobileredirect=true&DefaultItemOpen=1"
 
 st.cache_data.clear()  # limpa cache sempre que roda
 
@@ -446,5 +448,6 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
             )
             st.plotly_chart(fig_scatter, use_container_width=False)
     
+
 
 
