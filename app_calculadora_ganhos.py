@@ -12,20 +12,6 @@ import networkx as nx
 # ====================== CONFIG ======================
 st.set_page_config(page_title="🖩 Calculadora de Ganhos", page_icon="📶", layout="wide")
 
-# ====================== LOGIN ======================
-def check_password():
-    def password_entered():
-        st.session_state["authenticated"] = (st.session_state.get("password") == "claro@123")
-        if not st.session_state["authenticated"]:
-            st.error("Senha incorreta. Tente novamente.")
-    if "authenticated" not in st.session_state:
-        st.session_state["authenticated"] = False
-    if not st.session_state["authenticated"]:
-        st.text_input("🔐 Insira a senha:", type="password",
-                      on_change=password_entered, key="password")
-        st.stop()
-
-check_password()
 
 # ====================== LOGO ======================
 def _find_asset_bytes(name_candidates):
@@ -448,6 +434,7 @@ if st.button("🚀 Calcular Ganhos Potenciais"):
             )
             st.plotly_chart(fig_scatter, use_container_width=False)
     
+
 
 
 
